@@ -3,8 +3,8 @@
 ;; Original-Author: Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
 ;; Maintainer: Rupert Lane <rupert@merguez.demon.co.uk>
 ;; Created: 1 Dec 1994
-;; Version: 1.5.1
-;; Released: 5 Dec 1999
+;; Version: 1.5.2
+;; Released: 15 Dec 1999
 ;; Keywords: languages
 
 ;;; Copyright:
@@ -46,7 +46,7 @@
 ;;  (autoload 'inform-mode "inform-mode" "Inform editing mode." t)
 ;;  (autoload 'inform-maybe-mode "inform-mode" "Inform/C header editing mode.")
 ;;  (setq auto-mode-alist
-;;        (append '(("\\.h\\'"   . inform-maybe-mode) 
+;;        (append '(("\\.h\\'"   . inform-maybe-mode)
 ;;                  ("\\.inf\\'" . inform-mode))
 ;;                auto-mode-alist))
 ;;
@@ -60,9 +60,11 @@
 (require 'font-lock)
 
 
-;;; General variables: --------------------------------------------------------
+;;;
+;;; General variables
+;;;
 
-(defconst inform-mode-version "1.5.1")
+(defconst inform-mode-version "1.5.2")
 
 (defvar inform-maybe-other 'c-mode
   "*`inform-maybe-mode' runs this if current file is not in Inform mode.")
@@ -89,6 +91,7 @@ If you do not want a leading newline before opening braces then use:
     (define-key inform-mode-map "\C-c\C-o" 'inform-convert-old-format)
     (define-key inform-mode-map "\C-c\C-b" 'inform-build-project)
     (define-key inform-mode-map "\C-c\C-a" 'inform-toggle-auto-newline)
+    (define-key inform-mode-map "\C-c\C-s" 'inform-spell-check-buffer)
     (define-key inform-mode-map "\M-n" 'inform-next-object)
     (define-key inform-mode-map "\M-p" 'inform-prev-object)
     (define-key inform-mode-map "{" 'inform-electric-brace)
@@ -96,10 +99,17 @@ If you do not want a leading newline before opening braces then use:
     (define-key inform-mode-map "]" 'inform-electric-brace)
     (define-key inform-mode-map ";" 'inform-electric-semi)
     (define-key inform-mode-map ":" 'inform-electric-key)
+    (define-key inform-mode-map "!" 'inform-electric-key)
     (define-key inform-mode-map "," 'inform-electric-comma)
     (define-key inform-mode-map [menu-bar] (make-sparse-keymap))
     (define-key inform-mode-map [menu-bar inform] (cons "Inform" map))
-    (define-key map [convert] '("Convert old format" . inform-convert-old-format))
+    (define-key map [convert] 
+      '("Convert old format" . inform-convert-old-format))
+    (define-key map [separator4] '("--" . nil))
+    (define-key map [inform-spell-check-buffer] 
+      '("Spellcheck buffer" . inform-spell-check-buffer))
+    (define-key map [ispell-region] '("Spellcheck region" . ispell-region))
+    (define-key map [ispell-word] '("Spellcheck word" . ispell-word))
     (define-key map [separator3] '("--" . nil))
     (define-key map [load-tags] '("Load tags table" . visit-tags-table))
     (define-key map [retagify] '("Rebuild tags table" . inform-retagify))
@@ -139,7 +149,9 @@ If you do not want a leading newline before opening braces then use:
   "*Options with which to call the Inform compiler.")
 
 
-;;; Indentation parameters: ---------------------------------------------------
+;;;
+;;; Indentation parameters
+;;;
 
 (defvar inform-indent-property 8
   "*Indentation of the start of a property declaration.")
@@ -162,8 +174,14 @@ If you do not want a leading newline before opening braces then use:
 (defvar inform-indent-action-column 40
   "*Column at which action names should be placed in verb declarations.")
 
+(defvar inform-comments-line-up-p nil
+  "*If non-nil, comments spread over several lines will line up with the first.
+")
+
 
-;;; Syntax variables: ---------------------------------------------------------
+;;;
+;;; Syntax variables
+;;;
 
 (defvar inform-mode-syntax-table nil
   "Syntax table to use in Inform mode buffers.")
@@ -193,11 +211,11 @@ If you do not want a leading newline before opening braces then use:
 
 ;; These are used for syntax and font-lock purposes.
 ;; They combine words used in Inform 5 and Inform 6 for full compatability.
-;; You can add new keywords directly to this list as the regexps for 
+;; You can add new keywords directly to this list as the regexps for
 ;; font-locking are defined when this file is byte-compiled or eval'd.
 
 (eval-and-compile
-(defvar inform-directive-list 
+(defvar inform-directive-list
   '("abbreviate" "array" "attribute" "btrace" "class" "constant"
     "default" "dictionary" "end" "endif" "etrace" "extend" "fake_action"
     "global" "ifdef" "ifndef" "iftrue" "iffalse" "ifv3" "ifv5" "import"
@@ -235,9 +253,9 @@ keyword.")
 
 (defvar inform-code-keyword-list
   '("box" "break" "continue" "do" "else" "font off" "font on" "for"
-	"give" "has" "hasnt" "if" "inversion" "jump" "move" "new_line" "notin"
-    "objectloop" "ofclass" "print" "print_ret" "quit" "read" "remove" 
-    "restore" "return" "rfalse" "rtrue" "save" "spaces" "string" 
+        "give" "has" "hasnt" "if" "inversion" "jump" "move" "new_line" "notin"
+    "objectloop" "ofclass" "print" "print_ret" "quit" "read" "remove"
+    "restore" "return" "rfalse" "rtrue" "save" "spaces" "string"
     "style bold" "style fixed" "style reverse" "style roman" "style underline"
     "switch" "to" "until" "while")
   "List of Inform code keywords.")
@@ -247,27 +265,31 @@ keyword.")
 ;; avoid postponing the work to load time.
 
 ;; To do the work of building the regexps we use regexp-opt, which has
-;; different behaviour on XEmacs and GNU Emacs and may not even be 
+;; different behaviour on XEmacs and GNU Emacs and may not even be
 ;; available on ancient versions
 (eval-and-compile
   (defun inform-make-regexp (strings &optional paren shy)
-	(cond ((not (fboundp 'regexp-opt))
-		   (if (fboundp 'make-regexp)
-			   ;; Can we use older make-regexp?
-			   (make-regexp strings)
-			 ;; No way to make regexps
-			 ;; If you get this message, upgrade to a newer emacs or install
-			 ;; `make-regexp' from Simon Marshall's package of that name, 
-			 ;; which can be found at:
-			 ;; /src.doc.ic.ac.uk:/gnu/EmacsBits/elisp-archive/functions/make-regexp.el.Z
-			 (error "Neither regexp-opt nor make-regexp are available; see source code") ))
-		  ((string-match "XEmacs\\|Lucid" emacs-version)
-		   ;; XEmacs
-		   (regexp-opt strings paren shy))
-		  (t
-		   ;; GNU Emacs
-		   (regexp-opt strings)))))
-  
+        (cond ((not (fboundp 'regexp-opt))
+                   (if (fboundp 'make-regexp)
+                           ;; Can we use older make-regexp?
+                           (make-regexp strings)
+                         ;; No way to make regexps
+                         ;; If you get this message, upgrade to a newer emacs o
+r install
+                         ;; `make-regexp' from Simon Marshall's package of that
+ name,
+                         ;; which can be found at:
+                         ;; /src.doc.ic.ac.uk:/gnu/EmacsBits/elisp-archive/func
+tions/make-regexp.el.Z
+                         (error "Neither regexp-opt nor make-regexp are availab
+le; see source code") ))
+                  ((string-match "XEmacs\\|Lucid" emacs-version)
+                   ;; XEmacs
+                   (regexp-opt strings paren shy))
+                  (t
+                   ;; GNU Emacs
+                   (regexp-opt strings)))))
+
 (eval-and-compile
   (defvar inform-directive-regexp
     (concat "#?\\("
@@ -275,15 +297,15 @@ keyword.")
             "\\)\\>")
     "Regular expression matching an Inform directive.")
 
-  (defvar inform-object-regexp 
+  (defvar inform-object-regexp
     "#?\\<\\(object\\|nearby\\|class\\)\\>"
     "Regular expression matching start of object declaration.")
 
   (defvar inform-property-regexp
-	(concat "\\s-*\\(" 
-			(inform-make-regexp inform-property-list)
-			"\\)")
-	"Regular expression matching Inform properties."))
+        (concat "\\s-*\\("
+                        (inform-make-regexp inform-property-list)
+                        "\\)")
+        "Regular expression matching Inform properties."))
 
 
 (defvar inform-real-object-regexp
@@ -301,7 +323,9 @@ That is, one found at the start of a line.")
   "Tokens which precede the beginning of a statement.")
 
 
-;;; Font-lock keywords: -------------------------------------------------------
+;;;
+;;; Font-lock keywords
+;;;
 
 (defvar inform-font-lock-defaults
   '(inform-font-lock-keywords nil t ((?_ . "w")) inform-prev-object)
@@ -311,13 +335,13 @@ That is, one found at the start of a line.")
   (eval-when-compile
     (list
 
-	 ;; Inform code keywords
+         ;; Inform code keywords
       (cons (concat "\\s-+\\("
                     (inform-make-regexp inform-code-keyword-list)
                     "\\)\\(\\s-\\|$\\|;\\)")
             'font-lock-keyword-face)
 
-     ;; Keywords that declare variable or constant names. 
+     ;; Keywords that declare variable or constant names.
      (list (concat "^#?\\("
                    (inform-make-regexp inform-defining-list nil t)
                    "\\)\\s-+\\(\\(\\w\\|\\s_\\)+\\)")
@@ -331,8 +355,8 @@ That is, one found at the start of a line.")
      '("^\\s-+\\(class\\|has\\|with\\)\\(\\s-\\|$\\)"
        (1 font-lock-keyword-face))
 
-    
-     ;; Attributes and properties. 
+
+     ;; Attributes and properties.
      (cons (concat "\\<\\("
                    (inform-make-regexp (append inform-attribute-list
                                        inform-property-list))
@@ -341,7 +365,9 @@ That is, one found at the start of a line.")
   "Expressions to fontify in Inform mode.")
 
 
-;;; Inform mode: --------------------------------------------------------------
+;;;
+;;; Inform mode
+;;;
 
 (defun inform-mode ()
   "Major mode for editing Inform programs.
@@ -384,6 +410,11 @@ That is, one found at the start of a line.")
 * Font-lock support:
 
   Put \(add-hook 'inform-mode-hook 'turn-on-font-lock) in your .emacs.
+
+* Spell checking:
+
+  Type \\[inform-spell-check-buffer] to spell check all strings in the buffer.
+  Type \\[ispell-word] to check the single word at point.
 
 * Old versions of Inform Mode:
 
@@ -453,6 +484,10 @@ That is, one found at the start of a line.")
     Column at which action names should be placed in verb declarations.
     If NIL, then action names are not moved.
 
+  inform-comments-line-up-p \(NIL\)
+    If non-NIL, comments spread out over several lines will start on the
+    same column as the first comment line.
+
 * User options to do with compilation:
 
   inform-command
@@ -467,7 +502,7 @@ That is, one found at the start of a line.")
 
 * Please send any bugs or comments to rupert@merguez.demon.co.uk
 "
-  
+
   (interactive)
   (if inform-startup-message
       (message "Emacs Inform mode version %s." inform-mode-version))
@@ -488,22 +523,22 @@ That is, one found at the start of a line.")
   (make-local-variable 'parse-sexp-ignore-comments)
   (make-local-variable 'require-final-newline)
   (setq comment-column 40
-	comment-end ""
-	comment-indent-function 'inform-comment-indent
-	comment-start "!"
-	comment-start-skip "!+\\s-*"
-	fill-paragraph-function 'inform-fill-paragraph
-	font-lock-defaults inform-font-lock-defaults
+        comment-end ""
+        comment-indent-function 'inform-comment-indent
+        comment-start "!"
+        comment-start-skip "!+\\s-*"
+        fill-paragraph-function 'inform-fill-paragraph
+        font-lock-defaults inform-font-lock-defaults
         imenu-extract-index-name-function 'inform-imenu-extract-name
         imenu-prev-index-position-function 'inform-prev-object
-	indent-line-function 'inform-indent-line
-	indent-region-function 'inform-indent-region
-	inform-startup-message nil
-	local-abbrev-table inform-mode-abbrev-table
-	major-mode 'inform-mode
-	mode-name "Inform"
-	parse-sexp-ignore-comments t
-	require-final-newline t)
+        indent-line-function 'inform-indent-line
+        indent-region-function 'inform-indent-region
+        inform-startup-message nil
+        local-abbrev-table inform-mode-abbrev-table
+        major-mode 'inform-mode
+        mode-name "Inform"
+        parse-sexp-ignore-comments t
+        require-final-newline t)
   (auto-fill-mode 1)
   (if inform-autoload-tags
       (inform-auto-load-tags-table))
@@ -513,14 +548,16 @@ That is, one found at the start of a line.")
   "Starts Inform mode if file is in Inform; `inform-maybe-other' otherwise."
   (let ((case-fold-search t))
     (if (save-excursion
-	  (re-search-forward
-	   "^\\(!\\|object\\|nearby\\|\\[ \\)"
-	   nil t))
-	(inform-mode)
+          (re-search-forward
+           "^\\(!\\|object\\|nearby\\|\\[ \\)"
+           nil t))
+        (inform-mode)
       (funcall inform-maybe-other))))
 
 
-;;; Syntax and indentation: ---------------------------------------------------
+;;;
+;;; Syntax and indentation
+;;;
 
 ;; Go to the start of the current Inform definition.  Just goes to the
 ;; most recent line with a function beginning [, or a directive.
@@ -529,13 +566,13 @@ That is, one found at the start of a line.")
   (let ((case-fold-search t))
     (catch 'found
       (end-of-line 1)
-      (while (re-search-backward "\n[[#a-z]" nil 'move)
-	(forward-char 1)
-	(if (or (and (looking-at "\\[")
-		     (eq (inform-preceding-char) ?\;))
-		(looking-at inform-directive-regexp))
-	    (throw 'found nil))
-	(forward-char -1)))))
+      (while (re-search-backward "\n[[a-z]" nil 'move)
+        (forward-char 1)
+        (if (or (and (looking-at "\\[")
+                     (eq (inform-preceding-char) ?\;))
+                (looking-at inform-directive-regexp))
+            (throw 'found nil))
+        (forward-char -1)))))
 
 ;; Returns preceding non-blank, non-comment character in buffer.  It is
 ;; assumed that point is not inside a string or comment.
@@ -557,15 +594,15 @@ That is, one found at the start of a line.")
     (skip-syntax-backward " ")
     (if (bobp) ?\;
       (let ((p (preceding-char)))
-	(cond ((and (eq p ?o)
-		    (>= (- (point) 2) (point-min)))
-	       (goto-char (- (point) 2))
-	       (if (looking-at "\\<do") 'do p))
-	      ((and (eq p ?e)
-		    (>= (- (point) 4) (point-min)))
-	       (goto-char (- (point) 4))
-	       (if (looking-at "\\<else") 'else p))
-	      (t p))))))
+        (cond ((and (eq p ?o)
+                    (>= (- (point) 2) (point-min)))
+               (goto-char (- (point) 2))
+               (if (looking-at "\\<do") 'do p))
+              ((and (eq p ?e)
+                    (>= (- (point) 4) (point-min)))
+               (goto-char (- (point) 4))
+               (if (looking-at "\\<else") 'else p))
+              (t p))))))
 
 ;; `inform-syntax-class' returns a list describing the syntax at point.
 
@@ -615,30 +652,30 @@ That is, one found at the start of a line.")
 
 (defun inform-syntax-class (&optional defun-start data)
   (let ((line-start (point))
-	in-obj state
-	(case-fold-search t))
+        in-obj state
+        (case-fold-search t))
     (save-excursion
       (cond (defun-start
-	      (setq state (parse-partial-sexp defun-start line-start nil nil
-					      (nth 3 data)))
-	      (setq in-obj
-		    (cond ((or (> (car state) 0) (nth 3 state) (nth 4 state))
-			   (nth 1 data))
-			  ((nth 1 data) (/= (inform-preceding-char) ?\;))
-			  (t (looking-at inform-object-regexp)))))
-	    (t
-	     (inform-beginning-of-defun)
-	     (setq in-obj (looking-at inform-object-regexp)
-		   state (parse-partial-sexp (point) line-start)))))
+              (setq state (parse-partial-sexp defun-start line-start nil nil
+                                              (nth 3 data)))
+              (setq in-obj
+                    (cond ((or (> (car state) 0) (nth 3 state) (nth 4 state))
+                           (nth 1 data))
+                          ((nth 1 data) (/= (inform-preceding-char) ?\;))
+                          (t (looking-at inform-object-regexp)))))
+            (t
+             (inform-beginning-of-defun)
+             (setq in-obj (looking-at inform-object-regexp)
+                   state (parse-partial-sexp (point) line-start)))))
 
     (list
      (if (> (car state) 0)
-	 ;; If there's a containing sexp then it's easy.
-	 (cond ((nth 3 state) 'string)
-	       ((nth 4 state) 'comment)
-	       ((looking-at comment-start) 'comment)
-	       ((looking-at inform-label-regexp) 'label)
-	       (t 'code))
+         ;; If there's a containing sexp then it's easy.
+         (cond ((nth 3 state) 'string)
+               ((nth 4 state) 'comment)
+               ((looking-at (concat "\\s-*" comment-start)) 'comment)
+               ((looking-at inform-label-regexp) 'label)
+               (t 'code))
 
        ;; Otherwise there are a bunch of special cases (has, with,
        ;; class, properties) that must be checked for.  Note that we
@@ -646,48 +683,56 @@ That is, one found at the start of a line.")
        ;; class membership in an object declaration.  This is done by
        ;; looking for a preceding semicolon.
        (cond ((nth 3 state) 'string)
-	     ((nth 4 state) 'comment)
-	     ((looking-at comment-start) 'comment)
-	     ((and in-obj (looking-at "\\s-*class\\>")
-		   (/= (inform-preceding-char) ?\;))
-	      'class)
-	     ((looking-at inform-action-regexp) 'action)
-	     ((looking-at inform-directive-regexp) 'directive)
-	     ((and (looking-at "\\[") (eq (inform-preceding-char) ?\;))
-	      'directive)
-	     ((and (not in-obj) (eq (inform-preceding-char) ?\;))
-	      'directive)
-	     ((not in-obj) 'other)
-	     ((looking-at "\\s-*has\\(\\s-\\|$\\)") 'has)
-	     ((looking-at "\\s-*with\\(\\s-\\|$\\)") 'with)
-	     ((or (eq (inform-preceding-char) ?,) 
-			  (looking-at inform-property-regexp))
-		  'property)
-	     ((looking-at "\\s-*$") 'blank)
-	     (t 'other)))
+             ((nth 4 state) 'comment)
+             ((looking-at (concat "\\s-*" comment-start)) 'comment)
+             ((and in-obj (looking-at "\\s-*class\\>")
+                   (/= (inform-preceding-char) ?\;))
+              'class)
+             ((looking-at inform-action-regexp) 'action)
+             ((looking-at inform-directive-regexp) 'directive)
+             ((and (looking-at "\\[") (eq (inform-preceding-char) ?\;))
+              'directive)
+             ((and (not in-obj) (eq (inform-preceding-char) ?\;))
+              'directive)
+             ((looking-at "\\s-*$") 'blank)
+             ((not in-obj) 'other)
+             ((looking-at "\\s-*has\\(\\s-\\|$\\)") 'has)
+             ((looking-at "\\s-*with\\(\\s-\\|$\\)") 'with)
+             ((or (eq (inform-preceding-char) ?,)
+                          (looking-at inform-property-regexp))
+                  'property)
+             ;; This handles declarations of objects in a class eg
+             ;; Bird "swallow";
+             ;; It assumes that class names follow the convention of being
+             ;; capitalised. This is not the most elegent way of handling
+             ;; this case but in practice works well.
+             ((looking-at "\\s-*[A-Z]")
+              'directive)
+             (t 
+              'other)))
 
      ;; Are we in an object?
      (if (and in-obj
-	      (not (looking-at inform-object-regexp))
-	      (zerop (car state))
-	      (eq (inform-preceding-char) ?\;))
-	 nil
+              (not (looking-at inform-object-regexp))
+              (zerop (car state))
+              (eq (inform-preceding-char) ?\;))
+         nil
        in-obj)
 
      ;; List of known enclosing sexps.
-     (let ((sexps (nth 2 data))		; the old list of sexps
-	   (depth (car state))		; current nesting depth
-	   (sexp-start (nth 1 state)))	; enclosing sexp, if any
+     (let ((sexps (nth 2 data))         ; the old list of sexps
+           (depth (car state))          ; current nesting depth
+           (sexp-start (nth 1 state)))  ; enclosing sexp, if any
        (if sexps
-	   ;; Strip away closed sexps.
-	   (let ((sexp-depth (car (car sexps))))
-	     (while (and sexps (or (> sexp-depth depth)
-				   (and (eq sexp-depth depth)
-					sexp-start)))
-	       (setq sexps (cdr sexps)
-		     sexp-depth (if sexps (car (car sexps)))))))
+           ;; Strip away closed sexps.
+           (let ((sexp-depth (car (car sexps))))
+             (while (and sexps (or (> sexp-depth depth)
+                                   (and (eq sexp-depth depth)
+                                        sexp-start)))
+               (setq sexps (cdr sexps)
+                     sexp-depth (if sexps (car (car sexps)))))))
        (if sexp-start
-	   (setq sexps (cons (cons depth sexp-start) sexps)))
+           (setq sexps (cons (cons depth sexp-start) sexps)))
        sexps)
 
      ;; State from the parse algorithm.
@@ -700,10 +745,10 @@ That is, one found at the start of a line.")
 ;; whitespace).
 
 (defun inform-calculate-indentation (data)
-  (let ((syntax (car data))		; syntax class of start of line
-	(in-obj (nth 1 data))		; inside an object?
-	(depth (car (nth 3 data)))	; depth of nesting of start of line
-	(case-fold-search t))		; searches are case-insensitive
+  (let ((syntax (car data))             ; syntax class of start of line
+        (in-obj (nth 1 data))           ; inside an object?
+        (depth (car (nth 3 data)))      ; depth of nesting of start of line
+        (case-fold-search t))           ; searches are case-insensitive
     (cond
 
      ;; Directives should never be indented or else the directive-
@@ -716,146 +761,185 @@ That is, one found at the start of a line.")
      ((eq syntax 'property) inform-indent-property)
      ((eq syntax 'other)
       (cond ((looking-at "\\s-*\\[") inform-indent-property)
-	    (in-obj (+ inform-indent-property inform-indent-level))
-	    (t inform-indent-level)))
+            (in-obj (+ inform-indent-property inform-indent-level))
+            (t inform-indent-level)))
      ((and (eq syntax 'string) (zerop depth))
       (cond (in-obj (+ inform-indent-property inform-indent-level))
-	    (t inform-indent-level)))
+            (t inform-indent-level)))
      ((and (eq syntax 'comment) (zerop depth))
-      (if in-obj inform-indent-property 0))
+      (inform-line-up-comment
+       (if in-obj inform-indent-property 0)))
      ((eq syntax 'action) inform-indent-level)
      ((memq syntax '(has with class)) inform-indent-has-with-class)
 
      ;; We are inside a sexp of some sort.
      (t
-      (let ((indent 0)			; calculated indent column
-	    paren			; where the enclosing sexp begins
-	    string-start		; where string (if any) starts
-	    cont-p			; true if line is a continuation
-	    paren-char			; the parenthesis character
-	    prec-token			; token preceding line
-	    this-char)			; character under consideration
-	(save-excursion
+      (let ((indent 0)                  ; calculated indent column
+            paren                       ; where the enclosing sexp begins
+            string-start                ; where string (if any) starts
+            cont-p                      ; true if line is a continuation
+            paren-char                  ; the parenthesis character
+            prec-token                  ; token preceding line
+            this-char)                  ; character under consideration
+        (save-excursion
 
-	  ;; Skip back to the start of a string, if any.  (Note that
-	  ;; we can't be in a comment since the syntax class applies
-	  ;; to the start of the line.)
-	  (if (eq syntax 'string)
-	      (progn
+          ;; Skip back to the start of a string, if any.  (Note that
+          ;; we can't be in a comment since the syntax class applies
+          ;; to the start of the line.)
+          (if (eq syntax 'string)
+              (progn
             (skip-syntax-backward "^\"")
             (forward-char -1)
             (setq string-start (point))))
 
-	  ;; Now find the start of the sexp containing point.  Most
-	  ;; likely, the location was found by `inform-syntax-class';
-	  ;; if not, call `up-list' now and save the result in case
-	  ;; it's useful in future.
-	  (save-excursion
-	    (let ((sexps (nth 2 data)))
-	      (if (and sexps (eq (car (car sexps)) depth))
-		  (goto-char (cdr (car sexps)))
-		(up-list -1)
-		(setcar (nthcdr 2 data)
-			(cons (cons depth (point)) (nth 2 data)))))
-	    (setq paren (point)
-		  paren-char (following-char)))
+          ;; Now find the start of the sexp containing point.  Most
+          ;; likely, the location was found by `inform-syntax-class';
+          ;; if not, call `up-list' now and save the result in case
+          ;; it's useful in future.
+          (save-excursion
+            (let ((sexps (nth 2 data)))
+              (if (and sexps (eq (car (car sexps)) depth))
+                  (goto-char (cdr (car sexps)))
+                (up-list -1)
+                (setcar (nthcdr 2 data)
+                        (cons (cons depth (point)) (nth 2 data)))))
+            (setq paren (point)
+                  paren-char (following-char)))
 
-	  ;; If we were in a string, now skip back to the start of the
-	  ;; line.  We have to do this *after* calling `up-list' just
-	  ;; in case there was an opening parenthesis on the line
-	  ;; including the start of the string.
-	  (if (eq syntax 'string)
-	      (forward-line 0))
+          ;; If we were in a string, now skip back to the start of the
+          ;; line.  We have to do this *after* calling `up-list' just
+          ;; in case there was an opening parenthesis on the line
+          ;; including the start of the string.
+          (if (eq syntax 'string)
+              (forward-line 0))
 
-	  ;; The indentation depends on what kind of sexp we are in.
-	  ;; If line is in parentheses, indent to opening parenthesis.
-	  (if (eq paren-char ?\()
-	      (setq indent (progn (goto-char paren) (1+ (current-column))))
-	
-	    ;; Line not in parentheses.
-	    (setq prec-token (inform-preceding-token)
-		  this-char (following-char))
-	    (cond
+          ;; The indentation depends on what kind of sexp we are in.
+          ;; If line is in parentheses, indent to opening parenthesis.
+          (if (eq paren-char ?\()
+              (setq indent (progn (goto-char paren) (1+ (current-column))))
+        
+            ;; Line not in parentheses.
+            (setq prec-token (inform-preceding-token)
+                  this-char (following-char))
+            (cond
 
-         ;; Each 'else' should have the same indentation as the matching 'if'
-         ((looking-at "\\s-*else")
-          ;; Find the matching 'if' by counting 'if's and 'else's in this sexp
-          (let ((offset 0) (if-count 0) found)
-            (while (and (not found)
-                        (progn (forward-sexp -1) t)  ; skip over sub-sexps
-                        (re-search-backward "\\s-*\\(else\\|if\\)" paren t))
-              (setq if-count (+ if-count
-                               (if (string= (match-string 1) "else")
-                                   -1 1)))
-              (if (eq if-count 1) (setq found t)))
-            (if (not found)
-                (setq indent 0)
+             ;; Each 'else' should have the same indentation as the 
+             ;; matching 'if'
+             ((looking-at "\\s-*else")
+              ;; Find the matching 'if' by counting 'if's and 'else's 
+              ;; in this sexp
+              (let ((offset 0) (if-count 0) found)
+                (while (and (not found)
+                            (progn (forward-sexp -1) t)  ; skip over sub-sexps
+                            (re-search-backward "\\s-*\\(else\\|if\\)" 
+                                                paren t))
+                  (setq if-count (+ if-count
+                                    (if (string= (match-string 1) "else")
+                                        -1 1)))
+                  (if (eq if-count 1) (setq found t)))
+                (if (not found)
+                    (setq indent 0)
+                  (forward-line 0)
+                  (skip-syntax-forward " ")
+                  (setq indent (current-column)))))
+
+             ;; Line is an inlined directive-- always put on column 0
+             ((looking-at "\\s-*#")
+              (setq indent 0))
+             
+             ;; Line is in an implicit block: take indentation from
+             ;; the line that introduces the block, plus one level.
+             ((memq prec-token '(?\) do else))
+              (forward-sexp -1)
               (forward-line 0)
               (skip-syntax-forward " ")
-              (setq indent (current-column)))))
-         
-	     ;; Line is in an implicit block: take indentation from
-	     ;; the line that introduces the block, plus one level.
-	     ((memq prec-token '(?\) do else))
-	      (forward-sexp -1)
-	      (forward-line 0)
-	      (skip-syntax-forward " ")
-	      (setq indent
-		    (+ (current-column)
-		       (if (eq this-char ?{) 0 inform-indent-level))))
+              (setq indent
+                    (+ (current-column)
+                       (if (eq this-char ?{) 0 inform-indent-level))))
 
-	     ;; Line is a continued statement.
-	     ((not (memq prec-token inform-statement-terminators))
-	      (setq cont-p t)
-	      (forward-line -1)
-	      (let ((token (inform-preceding-token)))
+             ;; Line is a continued statement.
+             ((not (memq prec-token inform-statement-terminators))
+              (setq cont-p t)
+              (forward-line -1)
+              (let ((token (inform-preceding-token)))
             ;; Is it the first continuation line?
             (if (memq token inform-statement-terminators)
                 (setq indent inform-indent-cont-statement)))
-	      (skip-syntax-forward " ")
-	      (setq indent (+ indent (current-column))))
+              (skip-syntax-forward " ")
+              (setq indent (+ indent (current-column))))
 
-	     ;; Line is in a function, take indentation from start of
-	     ;; function, ignoring `with'.
-	     ((eq paren-char ?\[)
-	      (goto-char paren)
-	      (forward-line 0)
-	      (looking-at "\\(\\s-*with\\s-\\)?\\s-*")
-	      (goto-char (match-end 0))
-	      (setq indent
-		    (+ (current-column)
-		       (if (eq this-char ?\]) 0 inform-indent-level))))
+             ;; Line is in a function, take indentation from start of
+             ;; function, ignoring `with'.
+             ((eq paren-char ?\[)
+              (goto-char paren)
+              (forward-line 0)
+              (looking-at "\\(\\s-*with\\s-\\)?\\s-*")
+              (goto-char (match-end 0))
+              (setq indent
+                    (+ (current-column)
+                       (if (eq this-char ?\]) 0 inform-indent-level))))
 
-	     ;; Line is in a block: take indentation from block.
-	     (t
-	      (goto-char paren)
-	      (if (eq (inform-preceding-char) ?\))
+             ;; Line is in a block: take indentation from block.
+             (t
+              (goto-char paren)
+              (if (eq (inform-preceding-char) ?\))
               (forward-sexp -1))
-	      (forward-line 0)
-	      (skip-syntax-forward " ")
-          
-	      (setq indent
-                (+ (current-column) 
-                   (if (memq this-char '(?} ?{)) 
+              (forward-line 0)
+              (skip-syntax-forward " ")
+
+              (setq indent
+                (+ (current-column)
+                   (if (memq this-char '(?} ?{))
                        0
                      inform-indent-level)))
           ))
 
-	    ;; We calculated the indentation for the start of the
-	    ;; string; correct this for the remainder of the string if
-	    ;; appropriate.
-	    (cond ((and (eq syntax 'string) (not cont-p))
-		   (goto-char string-start)
-		   (let ((token (inform-preceding-token)))
-		     (if (not (memq token inform-statement-terminators))
-			 (setq indent
-			       (+ indent inform-indent-cont-statement)))))
-		
-		  ;; Indent for label, if any.
-		  ((eq syntax 'label)
-		   (setq indent (+ indent inform-indent-label-offset))))))
+            ;; We calculated the indentation for the start of the
+            ;; string; correct this for the remainder of the string if
+            ;; appropriate.
+            (cond ((and (eq syntax 'string) (not cont-p))
+                   (goto-char string-start)
+                   (let ((token (inform-preceding-token)))
+                     (if (not (memq token inform-statement-terminators))
+                         (setq indent
+                               (+ indent inform-indent-cont-statement)))))
+                
+                  ;; Indent for label, if any.
+                  ((eq syntax 'label)
+                   (setq indent (+ indent inform-indent-label-offset))))))
 
-	indent)))))
+        ;; Handle comments specially if told to line them up
+        (if (looking-at (concat "\\s-*" comment-start))
+            (setq indent (inform-line-up-comment indent)))
+                        
+        indent)))))
+
+
+(defun inform-line-up-comment (current-indent)
+  "Return the indentation to line up this comment with the previous one.
+If inform-comments-line-up-p is nil, or the preceeding lines do not contain
+comments, return CURRENT-INDENT."
+  (if inform-comments-line-up-p
+      (save-excursion
+        (let ((indent current-indent)
+              done limit)
+          (while (and (not done)
+                      (> (point) 1))
+            (setq limit (point))
+            (forward-line -1)
+            (cond ((looking-at (concat "\\s-*" comment-start))
+                   ;; a full-line comment, keep searching
+                   nil)
+                  ((re-search-forward comment-start limit t)
+                   ;; a line with a comment char anywhere but start
+                   (setq indent (1- (current-column)))
+                   (setq done t))
+                  (t
+                   ;; a non-comment line so we do not need to change
+                   (setq done t))))
+          indent))
+    current-indent))
+      
 
 ;; Modifies whitespace to the left of point so that the character after
 ;; point is at COLUMN.  If this is impossible, one whitespace character
@@ -867,15 +951,15 @@ That is, one found at the start of a line.")
 (defun inform-indent-to (column)
   (let ((col (current-column)))
     (cond ((eq col column) nil)
-	  ((< col column) (indent-to column) t)
-	  (t (let ((p (point))
-		 (mincol (progn (skip-syntax-backward " ")
-				(current-column))))
- 	       (if (eq mincol (1- col))
-		   nil
-		 (delete-region (point) p)
-		 (indent-to (max (if (bolp) mincol (1+ mincol)) column))
-		 t))))))
+          ((< col column) (indent-to column) t)
+          (t (let ((p (point))
+                 (mincol (progn (skip-syntax-backward " ")
+                                (current-column))))
+               (if (eq mincol (1- col))
+                   nil
+                 (delete-region (point) p)
+                 (indent-to (max (if (bolp) mincol (1+ mincol)) column))
+                 t))))))
 
 ;; Indent the line containing point; DATA is assumed to have been
 ;; returned from `inform-syntax-class', called at the *start* of the
@@ -886,23 +970,23 @@ That is, one found at the start of a line.")
 (defun inform-do-indent-line (data)
   (skip-syntax-forward " ")
   (let ((changed-p (inform-indent-to (inform-calculate-indentation data)))
-	(syntax (car data)))
+        (syntax (car data)))
 
     ;; Fix up space if appropriate, return changed flag.
     (or
      (cond
       ((and (memq syntax '(directive has with class))
-	    inform-indent-fixup-space
-	    (looking-at
-	     "\\(object\\|class\\|nearby\\|has\\|with\\)\\(\\s-+\\|$\\)"))
+            inform-indent-fixup-space
+            (looking-at
+             "\\(object\\|class\\|nearby\\|has\\|with\\)\\(\\s-+\\|$\\)"))
        (goto-char (match-end 0))
        (inform-indent-to inform-indent-property))
       ((and (eq syntax 'action)
-	    inform-indent-action-column
-	    (or (looking-at "\\*.*\\(->\\)")
-		(looking-at "\\*.*\\($\\)")))
+            inform-indent-action-column
+            (or (looking-at "\\*.*\\(->\\)")
+                (looking-at "\\*.*\\($\\)")))
        (goto-char (match-beginning 1))
-       (inform-indent-to inform-indent-action-column))       
+       (inform-indent-to inform-indent-action-column))
       (t nil))
      changed-p)))
 
@@ -931,21 +1015,23 @@ That is, one found at the start of a line.")
 (defun inform-indent-region (start end)
   (save-restriction
     (let ((endline (progn (goto-char (max end start))
-			  (or (bolp) (end-of-line))
-			  (point)))
-	  data linestart)
+                          (or (bolp) (end-of-line))
+                          (point)))
+          data linestart)
       (narrow-to-region (point-min) endline)
       (goto-char (min start end))
       (forward-line 0)
       (while (not (eobp))
-	(setq data (if data (inform-syntax-class linestart data)
-		     (inform-syntax-class))
-	      linestart (point))
-	(inform-do-indent-line data)
-	(forward-line 1)))))
+        (setq data (if data (inform-syntax-class linestart data)
+                     (inform-syntax-class))
+              linestart (point))
+        (inform-do-indent-line data)
+        (forward-line 1)))))
 
 
-;;; Filling paragraphs: -------------------------------------------------------
+;;;
+;;; Filling paragraphs
+;;;
 
 ;; Fill quoted string or comment containing point.  To fill a quoted
 ;; string, point must be between the quotes.  Deals appropriately with
@@ -975,7 +1061,7 @@ That is, one found at the start of a line.")
                     linebeg)
                (save-restriction
                  (narrow-to-region (point-min) end)
-                 
+
                  ;; Fold all the lines together, removing backslashes
                  ;; and multiple spaces as we go.
                  (subst-char-in-region start end ?\n ? )
@@ -984,7 +1070,7 @@ That is, one found at the start of a line.")
                  (goto-char start)
                  (while (re-search-forward "  +" end t)
                    (delete-region (match-beginning 0) (1- (match-end 0))))
-                 
+
                  ;; Split this line; reindent after first split,
                  ;; otherwise indent to point where first split ended
                  ;; up.
@@ -1002,14 +1088,16 @@ That is, one found at the start of a line.")
                      (insert "\n")
                      (indent-to-column indent-col 1)
                      (setq linebeg (point))))))
-             
+
              ;; Return T so that `fill-paragaph' doesn't try anything.
              t))
-          
+
           (t (error "Point is neither in a comment nor a string.")))))
 
 
-;;; Tags: ---------------------------------------------------------------------
+;;;
+;;; Tags
+;;;
 
 ;; Return the project file to which the current file belongs.  This is
 ;; either the value of `inform-project-file', the current file.
@@ -1023,29 +1111,29 @@ That is, one found at the start of a line.")
 
 (defun inform-project-file-list ()
   (let* ((project-file (inform-project-file))
-	 (project-dir (file-name-directory project-file))
-	 (in-file-list (list project-file))
-	 out-file-list
-	 (temp-buffer (generate-new-buffer "*Inform temp*")))
+         (project-dir (file-name-directory project-file))
+         (in-file-list (list project-file))
+         out-file-list
+         (temp-buffer (generate-new-buffer "*Inform temp*")))
     (message "Building list of files in project...")
     (save-excursion
       (while in-file-list
-	(if (member (car in-file-list) out-file-list)
-	    nil
-	  (set-buffer temp-buffer)
-	  (erase-buffer)
-	  (insert-file-contents (car in-file-list))
-	  (setq out-file-list (cons (car in-file-list) out-file-list)
-		in-file-list (cdr in-file-list))
-	  (goto-char (point-min))
-	  (while (re-search-forward "\\<#?include\\s-+\">\\([^\"]+\\)\"" nil t)
-	    (let ((file (match-string 1)))
-	      ;; We need to duplicate Inform's file-finding algorithm:
-	      (if (not (string-match "\\." file))
-		  (setq file (concat file ".inf")))
-	      (if (not (file-name-absolute-p file))
-		  (setq file (expand-file-name file project-dir)))
-	      (setq in-file-list (cons file in-file-list))))))
+        (if (member (car in-file-list) out-file-list)
+            nil
+          (set-buffer temp-buffer)
+          (erase-buffer)
+          (insert-file-contents (car in-file-list))
+          (setq out-file-list (cons (car in-file-list) out-file-list)
+                in-file-list (cdr in-file-list))
+          (goto-char (point-min))
+          (while (re-search-forward "\\<#?include\\s-+\">\\([^\"]+\\)\"" nil t)
+            (let ((file (match-string 1)))
+              ;; We need to duplicate Inform's file-finding algorithm:
+              (if (not (string-match "\\." file))
+                  (setq file (concat file ".inf")))
+              (if (not (file-name-absolute-p file))
+                  (setq file (expand-file-name file project-dir)))
+              (setq in-file-list (cons file in-file-list))))))
       (kill-buffer nil))
     (message "Building list of files in project...done")
     out-file-list))
@@ -1056,11 +1144,11 @@ That is, one found at the start of a line.")
 (defun inform-auto-load-tags-table ()
   (let (tf (project (inform-project-file)))
     (if project
-	(progn
-	  (setq tf (expand-file-name "TAGS" (file-name-directory project)))
-	  (if (file-readable-p tf)
+        (progn
+          (setq tf (expand-file-name "TAGS" (file-name-directory project)))
+          (if (file-readable-p tf)
           ;; visit-tags-table seems to just take first parameter in XEmacs
-	      (visit-tags-table tf))))))
+              (visit-tags-table tf))))))
 
 (defun inform-retagify ()
   "Create a tags table for the files in the current project.
@@ -1071,27 +1159,31 @@ file \(if not\).  Files included recursively are included in the tags
 table."
   (interactive)
   (let* ((project-file (inform-project-file))
-	 (project-dir (file-name-directory project-file))
-	 (files (inform-project-file-list))
-	 (tags-file (expand-file-name "TAGS" project-dir)))
+         (project-dir (file-name-directory project-file))
+         (files (inform-project-file-list))
+         (tags-file (expand-file-name "TAGS" project-dir)))
     (message "Running external tags program...")
 
-	;; Uses call-process to work on windows/nt systems (not tested)
-	;; Regexp matches routines or object/class definitions
-	(call-process inform-etags-program
-				  nil nil nil
-				  "--regex=/\\([oO]bject\\|[nN]earby\\|[cC]lass\\|\\[\\)\\([ \\t]*->\\)*[ \\t]*\\([A-Za-z0-9_]+\\)/"
-				  (concat "--output=" tags-file)
-				  "--language=none"
-				  (mapconcat (function (lambda (x) x)) files " "))
-	
+        ;; Uses call-process to work on windows/nt systems (not tested)
+        ;; Regexp matches routines or object/class definitions
+        (call-process inform-etags-program
+                                  nil nil nil
+                                  "--regex=/\\([oO]bject\\|[nN]earby\\|[cC]lass
+\\|\\[\\)\\([ \\t]*->\\)*[ \\t]*\\([A-Za-z0-9_]+\\)/"
+                                  (concat "--output=" tags-file)
+                                  "--language=none"
+                                  (mapconcat (function (lambda (x) x)) files "
+"))
+        
     (message "Running external tags program...done")
     (inform-auto-load-tags-table)))
 
 
 
 
-;;; Electric keys: ------------------------------------------------------------
+;;;
+;;; Electric keys
+;;;
 
 (defun inform-toggle-auto-newline (arg)
   "Toggle auto-newline feature.
@@ -1099,19 +1191,19 @@ Optional numeric ARG, if supplied turns on auto-newline when positive,
 turns it off when negative, and just toggles it when zero."
   (interactive "P")
   (setq inform-auto-newline
-	(if (or (not arg)
-		(zerop (setq arg (prefix-numeric-value arg))))
-	    (not inform-auto-newline)
-	  (> arg 0))))
+        (if (or (not arg)
+                (zerop (setq arg (prefix-numeric-value arg))))
+            (not inform-auto-newline)
+          (> arg 0))))
 
 (defun inform-electric-key (arg)
   "Insert the key typed and correct indentation."
   (interactive "P")
   (if (and (not arg) (eolp))
       (progn
-	(self-insert-command 1)
-	(inform-indent-line)
-	(end-of-line))
+        (self-insert-command 1)
+        (inform-indent-line)
+        (end-of-line))
     (self-insert-command (prefix-numeric-value arg))))
 
 (defun inform-electric-semi (arg)
@@ -1120,14 +1212,14 @@ Special handling does not occur inside strings and comments.
 Inserts newline after the character if `inform-auto-newline' is non-NIL."
   (interactive "P")
   (if (and (not arg)
-	   (eolp)
-	   (let ((data (inform-syntax-class)))
-	     (not (memq (car data) '(string comment)))))
-	(progn
-	  (self-insert-command 1)
-	  (inform-indent-line)
-	  (end-of-line)
-	  (if inform-auto-newline (newline-and-indent)))
+           (eolp)
+           (let ((data (inform-syntax-class)))
+             (not (memq (car data) '(string comment)))))
+        (progn
+          (self-insert-command 1)
+          (inform-indent-line)
+          (end-of-line)
+          (if inform-auto-newline (newline-and-indent)))
       (self-insert-command (prefix-numeric-value arg))))
 
 (defun inform-electric-comma (arg)
@@ -1136,16 +1228,16 @@ Special handling only occurs in object declarations.
 Inserts newline after the character if `inform-auto-newline' is non-NIL."
   (interactive "P")
   (if (and (not arg)
-	   (eolp)
-	   (let ((data (inform-syntax-class)))
-	     (and (not (memq (car data) '(string comment)))
-		  (nth 1 data)
-		  (zerop (car (nth 3 data))))))
-	(progn
-	  (self-insert-command 1)
-	  (inform-indent-line)
-	  (end-of-line)
-	  (if inform-auto-newline (newline-and-indent)))
+           (eolp)
+           (let ((data (inform-syntax-class)))
+             (and (not (memq (car data) '(string comment)))
+                  (nth 1 data)
+                  (zerop (car (nth 3 data))))))
+        (progn
+          (self-insert-command 1)
+          (inform-indent-line)
+          (end-of-line)
+          (if inform-auto-newline (newline-and-indent)))
     (self-insert-command (prefix-numeric-value arg))))
 
 (defun inform-electric-brace (arg)
@@ -1155,32 +1247,34 @@ Insert newlines before and after if `inform-auto-newline' is non-NIL."
   (interactive "P")
   (let (insertpos)
     (if (and (not arg)
-	     (eolp)
-	     (let ((data (inform-syntax-class)))
-	       (memq (car data) '(code label)))
-	     (or (save-excursion (skip-syntax-backward " ") (bolp))
-		 (if inform-auto-newline
-		     (progn (inform-indent-line) (newline) t) nil)))
-	(progn
-	  (insert last-command-char)
-	  (inform-indent-line)
-	  (end-of-line)
-	  (if (and inform-auto-newline (/= last-command-char ?\]))
-	      (progn
-		(newline)
-		(setq insertpos (1- (point)))
-		(inform-indent-line)))
-	  (save-excursion
-	    (if insertpos (goto-char insertpos))
-	    (delete-char -1))))
+             (eolp)
+             (let ((data (inform-syntax-class)))
+               (memq (car data) '(code label)))
+             (or (save-excursion (skip-syntax-backward " ") (bolp))
+                 (if inform-auto-newline
+                     (progn (inform-indent-line) (newline) t) nil)))
+        (progn
+          (insert last-command-char)
+          (inform-indent-line)
+          (end-of-line)
+          (if (and inform-auto-newline (/= last-command-char ?\]))
+              (progn
+                (newline)
+                (setq insertpos (1- (point)))
+                (inform-indent-line)))
+          (save-excursion
+            (if insertpos (goto-char insertpos))
+            (delete-char -1))))
     (if insertpos
-	(save-excursion
-	  (goto-char (1- insertpos))
-	  (self-insert-command (prefix-numeric-value arg)))
+        (save-excursion
+          (goto-char (1- insertpos))
+          (self-insert-command (prefix-numeric-value arg)))
       (self-insert-command (prefix-numeric-value arg)))))
 
 
-;;; Miscellaneous: ------------------------------------------------------------
+;;;
+;;; Miscellaneous
+;;;
 
 (defun inform-next-object (&optional arg)
   "Go to the next object or class declaration in the file.
@@ -1188,14 +1282,14 @@ With a prefix arg, go forward that many declarations.
 With a negative prefix arg, search backwards."
   (interactive "P")
   (let ((fun 're-search-forward)
-	(errstring "more")
-	(n (prefix-numeric-value arg)))
+        (errstring "more")
+        (n (prefix-numeric-value arg)))
     (cond ((< n 0)
-	   (setq fun 're-search-backward errstring "previous" n (- n)))
-	  ((looking-at inform-real-object-regexp)
-	   (setq n (1+ n))))
+           (setq fun 're-search-backward errstring "previous" n (- n)))
+          ((looking-at inform-real-object-regexp)
+           (setq n (1+ n))))
     (prog1
-	(funcall fun inform-real-object-regexp nil 'move n)
+        (funcall fun inform-real-object-regexp nil 'move n)
       (forward-line 0))))
 
 ;; This function doubles as an `imenu-prev-name' function, so when
@@ -1225,17 +1319,17 @@ file if this is NIL."
   (let ((project-file (file-name-nondirectory (inform-project-file))))
     (compile
      (concat inform-command
-	     (if (and inform-libraries-directory
-		      (file-directory-p inform-libraries-directory))
-		 (concat " +" inform-libraries-directory)
-	       "")
-	     ;; Note the use of Microsoft style errors.  The
-	     ;; Archimedes-style errors don't give the correct file
-	     ;; name.
-	     " " inform-command-options " -E1 "
-	     (if (string-match "\\`[^.]+\\(\\.inf\\'\\)" project-file)
-		 (substring project-file 0 (match-beginning 1))
-	       project-file)))))
+             (if (and inform-libraries-directory
+                      (file-directory-p inform-libraries-directory))
+                 (concat " +" inform-libraries-directory)
+               "")
+             ;; Note the use of Microsoft style errors.  The
+             ;; Archimedes-style errors don't give the correct file
+             ;; name.
+             " " inform-command-options " -E1 "
+             (if (string-match "\\`[^.]+\\(\\.inf\\'\\)" project-file)
+                 (substring project-file 0 (match-beginning 1))
+               project-file)))))
 
 (defun inform-convert-old-format ()
   "Undoes Inform Mode 0.4 formatting for current buffer.
@@ -1247,7 +1341,36 @@ undoes that stupidity."
     (untabify (point-min) (point-max))))
 
 
+;;;
+;;; Spell checking
+;;;
+
+(defun inform-spell-check-buffer ()
+  "Spellcheck all strings in the buffer using ispell."
+  (interactive)
+  (let (start (spell-continue t))
+    (save-excursion
+      (goto-char (point-min))
+      (while (and (search-forward "\"" nil t)
+                  spell-continue)
+        (if (and (eq (car (inform-syntax-class)) 'string)
+                 ;; don't spell check include directives etc
+                 (not (save-excursion
+                        (forward-line 0)
+                        (looking-at inform-directive-regexp))))
+            (progn
+              (forward-char -1)         ; move point to quotation mark
+              (setq start (point))
+              (forward-sexp)
+              (ispell-region start (point))
+              ;; If user quit out (eg by pressing q while in ispell)
+              ;; don't continue looking for strings to check.
+              (setq spell-continue
+                    (and ispell-process
+						 (eq (process-status ispell-process) 'run)))))))))
+        
+
+
 (provide 'inform-mode)
 
 ;;; inform-mode.el ends here
-

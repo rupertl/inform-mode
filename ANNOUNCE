@@ -1,29 +1,37 @@
-Subject: [Announce] inform-mode 1.5.1 released
+Subject:  [Announce] emacs inform-mode 1.5.2 released
 
 This is to announce the release of a new version of inform-mode. The
 code has been uploaded to incoming/if-archive on ftp.gmd.de and should
 soon be moved to if-archive/programming/editors. It is also available
-from the new inform-mode home page:
-	 http://www.merguez.demon.co.uk/inform-mode/
+from the inform-mode home page:
+    http://www.merguez.demon.co.uk/inform-mode/
 
-inform-mode is a major mode for emacs used to edit programs written in
-the Inform programming language. It supports the usual program mode
-functions: automatic indentation, moving over expressions, comment and
-string filling, font locking, tags-file support, starting compiles and
-parsing errors. It should work on GNU Emacs (v20) or XEmacs (v20/21)
-on any supported platform.
+Version 1.5.2 fixes a few bugs and adds two new features. In detail:
 
-Changes in this version:
-
-* Byte-compilation should work on GNU Emacs.
-* Indentation bug in first property of class or object fixed. 
-
+* Objects that start with a class line should now be indented properly.
+* You can now spell-check all double-quoted strings in the buffer using
+  the keystroke 'C-c C-s' (inform-spell-check-buffer). This assumes that
+  you have the GNU 'ispell' program on your system.
+* If you set the variable 'inform-comments-line-up-p' to non-NIL,
+  comments spread out over several lines will start on the same
+  column as the first comment line.
+* '#ifdef'/'#endif' blocks should be indented properly.
+* Indentation bug in first property of class or object fixed.
+   
 If you find any bugs please report them to me at
-   rupert@merguez.demon.co.uk. 
+     rupert@merguez.demon.co.uk.
+
 I am also interested in any ideas you have to improve the mode. In
-future versions I am planning to add the ability to spell-check
-program text and better integration with interpreters to speed up the
-write/compile/test cycle.
+future versions I am planning to add Customize support and better
+integration with interpreters to speed up the write/compile/test
+cycle.
+   
+inform-mode is a major mode for the emacs text editor used to edit
+programs written in the Inform programming language. It supports the
+usual program mode functions: automatic indentation, moving over
+expressions, comment and string filling, font locking, tags-file
+support, starting compiles and parsing errors. It should work on GNU
+Emacs (v20) or XEmacs (v20/21) on any supported platform.
 
 inform-mode was originally written by Gareth Rees and was previously
 maintained by Michael Fessler. It is free software; you can
@@ -31,4 +39,7 @@ redistribute it and/or modify it under the terms of the GNU General
 Public License as published by the Free Software Foundation; either
 version 2, or (at your option) any later version.
 
+Thanks to Daniel Barkalow, Jonadab the Unsightly One and Christopher
+Scott for bug reports and general feedback.
+   
 R
