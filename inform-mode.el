@@ -1,18 +1,26 @@
-;;; inform-mode.el --- Inform mode for GNU Emacs
-
-;; Author: Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
+;; Author of version 1.0: Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
+;; Updater to version 1.1: Michael Fessler <mef@netaxs.com>
 ;; Created: 1 Dec 1994
-;; Version: 1.0
+;; Version: 1.1 BETA 1 
 ;; Keywords: languages
 
-;; LCD Archive Entry:
+;; Previous version's LCD Archive Entry:
 ;; inform-mode|Gareth Rees|gdr11@cl.cam.ac.uk|
 ;; Major mode for editing Inform programs|
 ;; 02-May-1996|1.0|~/modes/inform-mode.el.Z|
 
+;; Provisional modifications made by Michael Fessler,
+;; mef@netaxs.com on to enable operation with NTEmacs and Inform 6.
+;; 
+;; THIS IS A BETA. Please do not redistribute.
+;; Known bugs: ETAGS support is broken at present
+;; Planned features: updating of recognized keywords to include new
+;; Inform 6 constructs
+
 ;;; Copyright:
 
 ;; Copyright (c) by Gareth Rees 1996
+;; Portions copyright (c) by Michael Fessler 1997-1998
 ;;
 ;; inform-mode is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -32,8 +40,7 @@
 ;;
 ;; This file implements a major mode for editing Inform programs.  It
 ;; understands most Inform syntax and is capable of indenting lines and
-;; formatting quoted strings (dealing correctly with the backslashes
-;; that Inform requires to appear before newlines).  Type `C-h m' within
+;; formatting quoted strings.  Type `C-h m' within
 ;; Inform mode for more details.
 ;;
 ;; Because Inform header files use the extension ".h" just as C header
@@ -57,7 +64,7 @@
 
 ;;; General variables: --------------------------------------------------------
 
-(defconst inform-mode-version "1.0")
+(defconst inform-mode-version "1.1b1")
 
 (defvar inform-maybe-other 'c-mode
   "*`inform-maybe-mode' runs this if current file is not in Inform mode.")
@@ -290,8 +297,7 @@ That is, one found at the start of a line.")
   Type \\[indent-region] to indent the region.
 
   Type \\[fill-paragraph] to fill strings or comments.
-  This compresses multiple spaces into single spaces and puts
-  backslashes at the end of each line in a string.
+  This compresses multiple spaces into single spaces.
 
 * Multi-file projects:
 
@@ -859,8 +865,8 @@ That is, one found at the start of a line.")
 ;;; Filling paragraphs: -------------------------------------------------------
 
 ;; Fill quoted string or comment containing point.  To fill a quoted
-;; string, point must be between the quotes.  Deals appropriately with
-;; trailing backslashes.
+;; string, point must be between the quotes.  Removes trailing backslashes 
+;; from legacy Inform5 code. 
 
 (defun inform-fill-paragraph (&optional arg)
   (let* ((data (inform-syntax-class))
@@ -913,17 +919,17 @@ That is, one found at the start of a line.")
 		   (indent-to-column indent-col 1)
 		   (setq linebeg (point))))
 
-	       ;; now put the backslashes back
-	       (goto-char start)
-	       (while (not (eobp))
-		 (end-of-line)
-		 (if (eobp)
-		     nil
-		   (insert "\\")
-		   (forward-line 1))))
-
+;       ;; now put the backslashes back -- elided for Inform6 (mef)
+;	       (goto-char start)
+; (while (not (eobp))
+;		 (end-of-line)
+;		 (if (eobp)
+;		     nil
+;		   (insert "\\")
+;		   (forward-line 1)))
+	      
 	     ;; Return T so that `fill-paragaph' doesn't try anything.
-	     t))
+	     t)))
 
 	  (t (error "Point is neither in a comment nor a string.")))))
 
@@ -966,6 +972,7 @@ That is, one found at the start of a line.")
 		  (setq file (expand-file-name file project-dir)))
 	      (setq in-file-list (cons file in-file-list))))))
       (kill-buffer nil))
+
     (message "Building list of files in project...done")
     out-file-list))
 
@@ -992,16 +999,17 @@ table."
 	 (project-dir (file-name-directory project-file))
 	 (files (inform-project-file-list))
 	 (tags-file (expand-file-name "TAGS" project-dir)))
-    (shell-command
-     (concat inform-etags-program
-	     " --regex='/^#?\\([oO]bject\\|[nN]earby\\|[cC]lass\\|\\[\\)"
-	     "\\b[ \t]*\\([A-Za-z0-9_]+\\>\\)/\\2/' --output="
-	     tags-file
-	     " --language=none "
-	     (mapconcat (function (lambda (x) x)) files " ")))
-    (inform-auto-load-tags-table)))
+;; modified by mef to use call-process, September '97
+    (setq inform-etags-args
+	  (append (list 
+		   "--regex=\"/^#?\\([oO]bject\\|[nN]earby\\|[cC]lass\\|\\[\\)\\b[\ t]*\\([A-Za-z0-9_]+\\>\\)/\\2/\"" 
+		   (concat "--output=" tags-file)
+		   "--language=none")
+		  files))
+(apply 'call-process inform-etags-program nil 
+       (get-buffer-create "etags") nil inform-etags-args)
+(inform-auto-load-tags-table)))
 
-
 ;;; Electric keys: ------------------------------------------------------------
 
 (defun inform-toggle-auto-newline (arg)
@@ -1060,6 +1068,7 @@ Inserts newline after the character if `inform-auto-newline' is non-NIL."
     (self-insert-command (prefix-numeric-value arg))))
 
 (defun inform-electric-brace (arg)
+  
   "Insert the key typed and correct line's indentation.
 Insert newlines before and after if `inform-auto-newline' is non-NIL."
   ;; This logic is the same as electric-c-brace.
@@ -1157,7 +1166,7 @@ undoes that stupidity."
   (let ((tab-width 4))
     (untabify (point-min) (point-max))))
 
-
+
 (provide 'inform-mode)
 
 ;;; inform-mode.el ends here
