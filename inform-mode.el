@@ -3,8 +3,8 @@
 ;; Original-Author: Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
 ;; Maintainer: Rupert Lane <rupert@merguez.demon.co.uk>
 ;; Created: 1 Dec 1994
-;; Version: 1.5.0
-;; Released: 27 Nov 1999
+;; Version: 1.5.1
+;; Released: 5 Dec 1999
 ;; Keywords: languages
 
 ;;; Copyright:
@@ -62,7 +62,7 @@
 
 ;;; General variables: --------------------------------------------------------
 
-(defconst inform-mode-version "1.5.0")
+(defconst inform-mode-version "1.5.1")
 
 (defvar inform-maybe-other 'c-mode
   "*`inform-maybe-mode' runs this if current file is not in Inform mode.")
@@ -196,6 +196,7 @@ If you do not want a leading newline before opening braces then use:
 ;; You can add new keywords directly to this list as the regexps for 
 ;; font-locking are defined when this file is byte-compiled or eval'd.
 
+(eval-and-compile
 (defvar inform-directive-list 
   '("abbreviate" "array" "attribute" "btrace" "class" "constant"
     "default" "dictionary" "end" "endif" "etrace" "extend" "fake_action"
@@ -240,6 +241,7 @@ keyword.")
     "style bold" "style fixed" "style reverse" "style roman" "style underline"
     "switch" "to" "until" "while")
   "List of Inform code keywords.")
+)
 
 ;; Some regular expressions are needed at compile-time too so as to
 ;; avoid postponing the work to load time.
@@ -247,24 +249,25 @@ keyword.")
 ;; To do the work of building the regexps we use regexp-opt, which has
 ;; different behaviour on XEmacs and GNU Emacs and may not even be 
 ;; available on ancient versions
-(defun inform-make-regexp (strings &optional paren shy)
-  (cond ((not (fboundp 'regexp-opt))
-         (if (fboundp 'make-regexp)
-             ;; Can we use older make-regexp?
-             (make-regexp strings)
-           ;; No way to make regexps
-           ;; If you get this message, upgrade to a newer emacs or install
-           ;; `make-regexp' from Simon Marshall's package of that name, 
-           ;; which can be found at:
-           ;; /src.doc.ic.ac.uk:/gnu/EmacsBits/elisp-archive/functions/make-regexp.el.Z
-           (error "Neither regexp-opt nor make-regexp are available; see source code") ))
-        ((string-match "XEmacs\\|Lucid" emacs-version)
-         ;; XEmacs
-         (regexp-opt strings paren shy))
-        (t
-         ;; GNU Emacs
-         (regexp-opt strings))))
-
+(eval-and-compile
+  (defun inform-make-regexp (strings &optional paren shy)
+	(cond ((not (fboundp 'regexp-opt))
+		   (if (fboundp 'make-regexp)
+			   ;; Can we use older make-regexp?
+			   (make-regexp strings)
+			 ;; No way to make regexps
+			 ;; If you get this message, upgrade to a newer emacs or install
+			 ;; `make-regexp' from Simon Marshall's package of that name, 
+			 ;; which can be found at:
+			 ;; /src.doc.ic.ac.uk:/gnu/EmacsBits/elisp-archive/functions/make-regexp.el.Z
+			 (error "Neither regexp-opt nor make-regexp are available; see source code") ))
+		  ((string-match "XEmacs\\|Lucid" emacs-version)
+		   ;; XEmacs
+		   (regexp-opt strings paren shy))
+		  (t
+		   ;; GNU Emacs
+		   (regexp-opt strings)))))
+  
 (eval-and-compile
   (defvar inform-directive-regexp
     (concat "#?\\("
@@ -274,7 +277,14 @@ keyword.")
 
   (defvar inform-object-regexp 
     "#?\\<\\(object\\|nearby\\|class\\)\\>"
-    "Regular expression matching start of object declaration."))
+    "Regular expression matching start of object declaration.")
+
+  (defvar inform-property-regexp
+	(concat "\\s-*\\(" 
+			(inform-make-regexp inform-property-list)
+			"\\)")
+	"Regular expression matching Inform properties."))
+
 
 (defvar inform-real-object-regexp
   (eval-when-compile (concat "^" inform-object-regexp))
@@ -650,7 +660,9 @@ That is, one found at the start of a line.")
 	     ((not in-obj) 'other)
 	     ((looking-at "\\s-*has\\(\\s-\\|$\\)") 'has)
 	     ((looking-at "\\s-*with\\(\\s-\\|$\\)") 'with)
-	     ((eq (inform-preceding-char) ?,) 'property)
+	     ((or (eq (inform-preceding-char) ?,) 
+			  (looking-at inform-property-regexp))
+		  'property)
 	     ((looking-at "\\s-*$") 'blank)
 	     (t 'other)))
 

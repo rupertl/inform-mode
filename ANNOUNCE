@@ -1,4 +1,4 @@
-Subject: [Announce] inform-mode 1.5.0 released
+Subject: [Announce] inform-mode 1.5.1 released
 
 This is to announce the release of a new version of inform-mode. The
 code has been uploaded to incoming/if-archive on ftp.gmd.de and should
@@ -13,23 +13,10 @@ string filling, font locking, tags-file support, starting compiles and
 parsing errors. It should work on GNU Emacs (v20) or XEmacs (v20/21)
 on any supported platform.
 
-The changes made in this version are mostly to bring the mode up to
-date with Inform 6: the emacs user interface remains the same.
+Changes in this version:
 
-In detail, the changes are:
-
-* Understands all Inform 6.21 directives and library 6/10 attributes and
-  properties.
-* Indents if-else blocks correctly,
-* Font locking for Inform routine code as well as object/class definitions.
-* New keywords can be added easily as font locking regexps are
-  calculated at mode eval time.
-* inform-indent-line (TAB) moves point in a similar way to other major
-  modes.
-* When filling strings, backslashes are no longer added.
-* Tags files can now be created on non-Unix platforms.
-* More object and routine definitions are now identified properly when
-  creating tage files.
+* Byte-compilation should work on GNU Emacs.
+* Indentation bug in first property of class or object fixed. 
 
 If you find any bugs please report them to me at
    rupert@merguez.demon.co.uk. 
