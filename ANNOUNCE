@@ -1,27 +1,26 @@
-This is to announce the release of a new version of inform-mode. The
-code has been uploaded to incoming/if-archive on ftp.gmd.de and should
-soon be moved to if-archive/programming/editors. It is also available
-from the inform-mode home page:
-	http://www.merguez.demon.co.uk/inform-mode/
+Subject: [ANNOUNCE] emacs inform-mode 1.5.7 released
 
-Version 1.5.6 fixes a few more bugs. In detail:
-* Recognise 'private' keyword
-* Fontify object name after '->' properly
-* Fontify dictionary words containing '-' properly
-* Fontify 1-character dictionary words properly
-* Fontify 'with name' properly
-* Correct fontification of char before attribute/property name
-* Allow imenu to recognize objects with -> in their header
+This is to announce the release of a new version of inform-mode, a
+major mode for editing Inform files in Emacs.  The code has been
+uploaded to incoming/if-archive on ftp.ifarchive.org and should soon be moved
+to if-archive/programming/editors. It is also available from the
+inform-mode home page:
+        http://rupert-lane.org/inform-mode/
+
+Changes in version 1.5.7:
+
+* Fixed bug in fontification on GNU Emacs 21
 
 If you find any bugs please report them to me at
-	rupert@merguez.demon.co.uk. 
-I am also interested in any ideas you have to improve the mode. 
+        rupert@rupert-lane.org
+I am also interested in any ideas you have to improve the mode.
 
 inform-mode was originally written by Gareth Rees and was previously
 maintained by Michael Fessler. It is free software; you can
 redistribute it and/or modify it under the terms of the GNU General
 Public License as published by the Free Software Foundation; either
 version 2, or (at your option) any later version.
-
-R
    
+Thanks to Derek Feddon for bug reports and testing.
+   
+R  

@@ -1,17 +1,17 @@
 ;;; inform-mode.el --- Inform mode for Emacs
 
 ;; Original-Author: Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
-;; Maintainer: Rupert Lane <rupert@merguez.demon.co.uk>
+;; Maintainer: Rupert Lane <rupert@rupert-lane.org>
 ;; Created: 1 Dec 1994
-;; Version: 1.5.6
-;; Released: 17 Dec 2000
+;; Version: 1.5.7
+;; Released: 2 April 2002
 ;; Keywords: languages
 
 ;;; Copyright:
 
 ;; Copyright (c) by Gareth Rees 1996
 ;; Portions copyright (c) by Michael Fessler 1997-1998
-;; Portions copyright (c) by Rupert Lane 1999-2000
+;; Portions copyright (c) by Rupert Lane 1999-2000, 2002
 
 ;; inform-mode is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 
 ;; Inform is a compiler for adventure games by Graham Nelson,
 ;; available by anonymous FTP from
-;; /ftp.gmd.de:/if-archive/programming/inform/
+;; /ftp.ifarchive.org:/if-archive/programming/inform/
 ;;
 ;; This file implements a major mode for editing Inform programs.  It
 ;; understands most Inform syntax and is capable of indenting lines
@@ -53,7 +53,7 @@
 ;; To turn on font locking add:
 ;; (add-hook 'inform-mode-hook 'turn-on-font-lock)
 
-;; Please send any bugs or comments to rupert@merguez.demon.co.uk
+;; Please send any bugs or comments to rupert@rupert-lane.org
 
 ;;; Code:
 
@@ -65,7 +65,7 @@
 ;;; General variables
 ;;;
 
-(defconst inform-mode-version "1.5.6")
+(defconst inform-mode-version "1.5.7")
 
 (defvar inform-maybe-other 'c-mode
   "*`inform-maybe-mode' runs this if current file is not in Inform mode.")
@@ -240,6 +240,19 @@ first line.")
 Used to build a font-lock regexp; the name defined must follow the
 keyword.")
 
+  ;; We have to hardcode the regexp for inform-defining-list due to the way
+  ;; regexp-opt works on different emacsen.
+  ;; On Emacs 20 it always uses regular \( \) grouping
+  ;; On Emacs 21 it always uses shy \(?: \) grouping
+  ;; On XEmacs it can use either based on the shy parameter.
+  ;; This means it is impossible to write a match-string expression in
+  ;; inform-font-lock-keywords using regexp-opt that will work on all emacsen.
+  ;; If Emacs 20 support is dropped this should be removed and shy grouping
+  ;; used.
+  (defvar inform-defining-list-regexp
+    "\\[\\|a\\(rray\\|ttribute\\)\\|c\\(lass\\|onstant\\)\\|fake_action\\|global\\|lowstring\\|nearby\\|object\\|property"
+    "Regexp based on inform-defining-list, hardcoded for portability.")
+
   (defvar inform-attribute-list
     '("absent" "animate" "clothing" "concealed" "container" "door"
       "edible" "enterable" "female" "general" "light" "lockable" "locked"
@@ -346,11 +359,12 @@ That is, one found at the start of a line.")
            'font-lock-keyword-face)
      
      ;; Keywords that declare variable or constant names.
-     (list (concat "^#?\\("
-                   (inform-make-regexp inform-defining-list nil t)
-		   "\\)\\s-+\\(->\\s-+\\)*\\(\\(\\w\\|\\s_\\)+\\)")
-           '(1 font-lock-keyword-face)
-           '(5 font-lock-function-name-face))
+     (list 
+      (concat "^#?\\("
+              inform-defining-list-regexp
+              "\\)\\s-+\\(->\\s-+\\)*\\(\\(\\w\\|\\s_\\)+\\)")
+      '(1 font-lock-keyword-face)
+      '(5 font-lock-function-name-face))
 
      ;; Other directives.
      (cons inform-directive-regexp 'font-lock-keyword-face)
@@ -520,7 +534,7 @@ That is, one found at the start of a line.")
   inform-command-options
     Additional options with which to call the Inform compiler.
 
-* Please send any bugs or comments to rupert@merguez.demon.co.uk
+* Please send any bugs or comments to rupert@rupert-lane.org
 "
 
   (interactive)
