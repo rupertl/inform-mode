@@ -1,29 +1,18 @@
-Subject:  [Announce] emacs inform-mode 1.5.3 released
-
 This is to announce the release of a new version of inform-mode. The
 code has been uploaded to incoming/if-archive on ftp.gmd.de and should
 soon be moved to if-archive/programming/editors. It is also available
 from the inform-mode home page:
-    http://www.merguez.demon.co.uk/inform-mode/
+	http://www.merguez.demon.co.uk/inform-mode/
 
-Version 1.5.3 fixes the following bug:
+Version 1.5.4 fixes a few minor bugs. In detail:
+* Dictionary words are now fontified using
+  inform-dictionary-word-face, as font-lock-constant-face is not
+  available on all Emacsen.
+* Actions (eg ##Examine) are indented properly.
 
-* Dictionary words are fontified using font-lock-constant-face. 
-   
 If you find any bugs please report them to me at
-     rupert@merguez.demon.co.uk.
-
-I am also interested in any ideas you have to improve the mode. In
-future versions I am planning to add Customize support and better
-integration with interpreters to speed up the write/compile/test
-cycle.
-   
-inform-mode is a major mode for the emacs text editor used to edit
-programs written in the Inform programming language. It supports the
-usual program mode functions: automatic indentation, moving over
-expressions, comment and string filling, font locking, tags-file
-support, starting compiles and parsing errors. It should work on GNU
-Emacs (v20) or XEmacs (v20/21) on any supported platform.
+	rupert@merguez.demon.co.uk. 
+I am also interested in any ideas you have to improve the mode. 
 
 inform-mode was originally written by Gareth Rees and was previously
 maintained by Michael Fessler. It is free software; you can
@@ -32,3 +21,4 @@ Public License as published by the Free Software Foundation; either
 version 2, or (at your option) any later version.
 
 R
+   

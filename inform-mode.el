@@ -3,7 +3,7 @@
 ;; Original-Author: Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
 ;; Maintainer: Rupert Lane <rupert@merguez.demon.co.uk>
 ;; Created: 1 Dec 1994
-;; Version: 1.5.3
+;; Version: 1.5.4
 ;; Released: 23 May 2000
 ;; Keywords: languages
 
@@ -11,7 +11,7 @@
 
 ;; Copyright (c) by Gareth Rees 1996
 ;; Portions copyright (c) by Michael Fessler 1997-1998
-;; Portions copyright (c) by Rupert Lane 1999
+;; Portions copyright (c) by Rupert Lane 1999-2000
 
 ;; inform-mode is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -64,7 +64,7 @@
 ;;; General variables
 ;;;
 
-(defconst inform-mode-version "1.5.3")
+(defconst inform-mode-version "1.5.4")
 
 (defvar inform-maybe-other 'c-mode
   "*`inform-maybe-mode' runs this if current file is not in Inform mode.")
@@ -331,16 +331,25 @@ That is, one found at the start of a line.")
   '(inform-font-lock-keywords nil t ((?_ . "w") (?' . "$")) inform-prev-object)
   "Font Lock defaults for Inform mode.")
 
+(defface inform-dictionary-word-face
+  '((((class color) (background light)) (:foreground "Red"))
+    (((class color) (background dark)) (:foreground "Pink"))
+    (t (:italic t :bold t)))
+  "Font lock mode face used to highlight dictionary words.")
+
+(defvar inform-dictionary-word-face 'inform-dictionary-word-face
+  "Variable for Font lock mode face used to highlight dictionary words.")
+
 (defvar inform-font-lock-keywords
   (eval-when-compile
     (list
 
-         ;; Inform code keywords
-      (cons (concat "\\s-+\\("
-                    (inform-make-regexp inform-code-keyword-list)
-                    "\\)\\(\\s-\\|$\\|;\\)")
-            'font-lock-keyword-face)
-
+	 ;; Inform code keywords
+	 (cons (concat "\\s-+\\("
+				   (inform-make-regexp inform-code-keyword-list)
+				   "\\)\\(\\s-\\|$\\|;\\)")
+		   'font-lock-keyword-face)
+	 
      ;; Keywords that declare variable or constant names.
      (list (concat "^#?\\("
                    (inform-make-regexp inform-defining-list nil t)
@@ -352,13 +361,13 @@ That is, one found at the start of a line.")
      (cons inform-directive-regexp 'font-lock-keyword-face)
 
 	 ;; Single quoted strings, length > 1, are dictionary words
-	 '("'\\(\\w\\w+\\)'" (1 font-lock-constant-face append))
+	 '("'\\(\\w\\w+\\)'" (1 inform-dictionary-word-face append))
 
 	 ;; Also quoted words after "name" property
 	 '("\\s-+\\(with\\)*\\s-+name\\s-+"
 	   (0 font-lock-variable-name-face t)       
 	   ("\"\\(\\w+\\)\"" nil nil 
-		(1  font-lock-constant-face t)))
+		(1  inform-dictionary-word-face t)))
 
      ;; `class', `has' and `with' in objects.
      '("^\\s-+\\(class\\|has\\|with\\)\\(\\s-\\|$\\)"
@@ -366,7 +375,7 @@ That is, one found at the start of a line.")
 
 
      ;; Attributes and properties.
-     (cons (concat "\\<\\("
+     (cons (concat "[^#]\\<\\("
                    (inform-make-regexp (append inform-attribute-list
                                        inform-property-list))
                    "\\)\\>")
@@ -853,7 +862,7 @@ That is, one found at the start of a line.")
                   (setq indent (current-column)))))
 
              ;; Line is an inlined directive-- always put on column 0
-             ((looking-at "\\s-*#")
+             ((looking-at "\\s-*#[^#]")
               (setq indent 0))
              
              ;; Line is in an implicit block: take indentation from
