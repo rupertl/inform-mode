@@ -3,8 +3,8 @@
 ;; Original-Author: Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
 ;; Maintainer: Rupert Lane <rupert@rupert-lane.org>
 ;; Created: 1 Dec 1994
-;; Version: 1.5.7
-;; Released: 2 April 2002
+;; Version: 1.5.8
+;; Released: 3 Sep 2002
 ;; Keywords: languages
 
 ;;; Copyright:
@@ -53,6 +53,12 @@
 ;; To turn on font locking add:
 ;; (add-hook 'inform-mode-hook 'turn-on-font-lock)
 
+;; If you use XEmacs and intend to use `inform-run-project' with a
+;; console-mode interpreter, you need to have the eterm package
+;; installed.  It should already be installed if you use XEmacs < 21,
+;; but starting with XEmacs 21.1 you may need to download and install
+;; it separately.
+
 ;; Please send any bugs or comments to rupert@rupert-lane.org
 
 ;;; Code:
@@ -65,7 +71,7 @@
 ;;; General variables
 ;;;
 
-(defconst inform-mode-version "1.5.7")
+(defconst inform-mode-version "1.5.8")
 
 (defvar inform-maybe-other 'c-mode
   "*`inform-maybe-mode' runs this if current file is not in Inform mode.")
@@ -89,8 +95,8 @@ If you do not want a leading newline before opening braces then use:
     (define-key inform-mode-map "\177" 'backward-delete-char-untabify)
     (define-key inform-mode-map "\C-c\C-r" 'inform-retagify)
     (define-key inform-mode-map "\C-c\C-t" 'visit-tags-table)
-    (define-key inform-mode-map "\C-c\C-o" 'inform-convert-old-format)
     (define-key inform-mode-map "\C-c\C-b" 'inform-build-project)
+    (define-key inform-mode-map "\C-c\C-c" 'inform-run-project)
     (define-key inform-mode-map "\C-c\C-a" 'inform-toggle-auto-newline)
     (define-key inform-mode-map "\C-c\C-s" 'inform-spell-check-buffer)
     (define-key inform-mode-map "\M-n" 'inform-next-object)
@@ -104,8 +110,6 @@ If you do not want a leading newline before opening braces then use:
     (define-key inform-mode-map "," 'inform-electric-comma)
     (define-key inform-mode-map [menu-bar] (make-sparse-keymap))
     (define-key inform-mode-map [menu-bar inform] (cons "Inform" map))
-    (define-key map [convert] 
-      '("Convert old format" . inform-convert-old-format))
     (define-key map [separator4] '("--" . nil))
     (define-key map [inform-spell-check-buffer] 
       '("Spellcheck buffer" . inform-spell-check-buffer))
@@ -115,6 +119,7 @@ If you do not want a leading newline before opening braces then use:
     (define-key map [load-tags] '("Load tags table" . visit-tags-table))
     (define-key map [retagify] '("Rebuild tags table" . inform-retagify))
     (define-key map [build] '("Build project" . inform-build-project))
+    (define-key map [run] '("Run project" . inform-run-project))
     (define-key map [separator2] '("--" . nil))
     (define-key map [next-object] '("Next object" . inform-next-object))
     (define-key map [prev-object] '("Previous object" . inform-prev-object))
@@ -148,6 +153,24 @@ If you do not want a leading newline before opening braces then use:
 
 (defvar inform-command-options ""
   "*Options with which to call the Inform compiler.")
+
+(defvar inform-interpreter-command "frotz"
+  "*The command with which to run the ZCode interpreter.
+If a string, the name of a command.  If a symbol or a function value, an
+Emacs-lisp function to be called with the name of the story file.")
+
+(defvar inform-interpreter-options ""
+  "*Additional options with which to call the ZCode interpreter.
+Only used if `inform-interpreter-command' is a string.")
+
+(defvar inform-interpreter-kill-old-process t
+  "*Whether to kill the old interpreter process when starting a new one.")
+
+(defvar inform-interpreter-is-graphical nil
+  "*Controls whether `inform-interpreter-command' will be run in a buffer.
+If NIL, `inform-run-project' will switch to the interpreter buffer after
+running the interpreter.")
+
 
 
 ;;;
@@ -353,10 +376,10 @@ That is, one found at the start of a line.")
     (list
 
      ;; Inform code keywords
-     (cons (concat "\\s-+\\("
+     (cons (concat "\\s-\\("
                    (inform-make-regexp inform-code-keyword-list)
                    "\\)\\(\\s-\\|$\\|;\\)")
-           'font-lock-keyword-face)
+           '(1 font-lock-keyword-face))
      
      ;; Keywords that declare variable or constant names.
      (list 
@@ -373,8 +396,15 @@ That is, one found at the start of a line.")
      '("'\\(\\(-\\|\\w\\)\\(\\(-\\|\\w\\)+\\(//\\w*\\)?\\|//\\w*\\)\\)'"
        (1 inform-dictionary-word-face append))
 
-     ;; Also quoted words after "name" property
-     '("\\s-name\\s-+"
+     ;; Double-quoted dictionary words
+     '("\\(\\s-name\\s-\\|^Verb\\|^Extend\\|^\\s-+\\*\\)"
+       ("\"\\(\\(-\\|\\w\\)+\\)\"" nil nil
+        (1 inform-dictionary-word-face t)))
+
+     ;; More double-quoted dictionary words
+     '("^\\s-+\"\\(\\(-\\|\\w\\)+\\)\"\\s-+\"\\(\\(-\\|\\w\\)+\\)\""
+       (1 inform-dictionary-word-face t)
+       (3 inform-dictionary-word-face t)
        ("\"\\(\\(-\\|\\w\\)+\\)\"" nil nil
         (1 inform-dictionary-word-face t)))
 
@@ -433,6 +463,11 @@ That is, one found at the start of a line.")
   Type \\[inform-build-project] to build the current project.
   Type \\[next-error] to go to the next error.
 
+* Running:
+
+  Type \\[inform-run-project] to run the current project in an
+  interpreter, either as a sepaarte process or in an Emacs terminal buffer.
+
 * Font-lock support:
 
   Put \(add-hook 'inform-mode-hook 'turn-on-font-lock) in your .emacs.
@@ -441,12 +476,6 @@ That is, one found at the start of a line.")
 
   Type \\[inform-spell-check-buffer] to spell check all strings in the buffer.
   Type \\[ispell-word] to check the single word at point.
-
-* Old versions of Inform Mode:
-
-  Versions of Inform Mode prior to 0.5 used tab stops every 4 characters
-  to control the formatting.  This was the Wrong Thing To Do.
-  Type \\[inform-convert-old-format] to undo the broken formatting.
 
 * Key definitions:
 
@@ -533,6 +562,28 @@ That is, one found at the start of a line.")
 
   inform-command-options
     Additional options with which to call the Inform compiler.
+
+* User options to do with an interpreter:
+
+  inform-interpreter-command
+    The command with which to run the ZCode interpreter.  Can be a
+    string (a command to be run), a symbol (name of function to call)
+    or a function.
+
+  inform-interpreter-options
+    Additional options with which to call the ZCode interpreter.  Only
+    used if `inform-interpreter-command' is a string.
+
+  inform-interpreter-kill-old-process
+    If non-NIL, `inform-run-project' will kill any running interpreter
+    process and start a new one.  If not, will switch to the interpreter's
+    buffer (if necessary - see documentation for `inform-run-project' for
+    details).
+
+  inform-interpreter-is-graphical
+    If NIL, `inform-run-project' will switch to the interpreter buffer
+    after running the interpreter.
+
 
 * Please send any bugs or comments to rupert@rupert-lane.org
 "
@@ -1054,16 +1105,16 @@ comments, return CURRENT-INDENT."
       (inform-calculate-indentation (inform-syntax-class))
     (max (1+ (current-column)) comment-column)))
 
-;; Indent line containing point.  If the indentation changes or if point
-;; is before the first non-whitespace character on the line,
-;; move point to indentation.
+;; Indent line containing point. 
+;; Keep point at the "logically" same place, unless point was before
+;; new indentation, in which case place point at indentation.
 
 (defun inform-indent-line ()
-  (let ((old-point (point)))
+  (let ((oldpos (- (point-max) (point))))
     (forward-line 0)
-    (or (inform-do-indent-line (inform-syntax-class))
-        (< old-point (point))
-        (goto-char old-point))))
+    (inform-do-indent-line (inform-syntax-class))
+    (and (< oldpos (- (point-max) (point)))
+         (goto-char (- (point-max) oldpos)))))
 
 ;; Indent all the lines in region.
 
@@ -1165,7 +1216,7 @@ comments, return CURRENT-INDENT."
 ;; loops.
 
 (defun inform-project-file-list ()
-  (let* ((project-file (inform-project-file))
+  (let* ((project-file (expand-file-name (inform-project-file)))
          (project-dir (file-name-directory project-file))
          (in-file-list (list project-file))
          out-file-list
@@ -1221,12 +1272,13 @@ table."
 
     ;; Uses call-process to work on windows/nt systems (not tested)
     ;; Regexp matches routines or object/class definitions
-    (call-process inform-etags-program
-                  nil nil nil
-                  "--regex=/\\([oO]bject\\|[nN]earby\\|[cC]lass\\|\\[\\)\\([ \\t]*->\\)*[ \\t]*\\([A-Za-z0-9_]+\\)/"
-                  (concat "--output=" tags-file)
-                  "--language=none"
-                  (mapconcat (function (lambda (x) x)) files ""))
+    (apply (function call-process)
+           inform-etags-program
+           nil nil nil
+           "--regex=/\\([oO]bject\\|[nN]earby\\|[cC]lass\\|\\[\\)\\([ \\t]*->\\)*[ \\t]*\\([A-Za-z0-9_]+\\)/"
+           (concat "--output=" tags-file)
+           "--language=none"
+           files)
         
     (message "Running external tags program...done")
     (inform-auto-load-tags-table)))
@@ -1364,6 +1416,11 @@ With a negative prefix arg, go forwards."
               (buffer-substring-no-properties (match-beginning 3)
                                               (match-end 3)))))
 
+
+;;;
+;;; Build and run project
+;;;
+
 (defun inform-build-project ()
   "Compile the current Inform project.
 The current project is given by `inform-project-file', or the current
@@ -1384,14 +1441,71 @@ file if this is NIL."
                  (substring project-file 0 (match-beginning 1))
                project-file)))))
 
-(defun inform-convert-old-format ()
-  "Undoes Inform Mode 0.4 formatting for current buffer.
-Early versions of Inform Mode used tab stops every 4 characters to
-control formatting, which was the Wrong Thing To Do.  This function
-undoes that stupidity."
+(defun inform-run-project ()
+  "Run the current Inform project using `inform-interpreter-command'.
+The current project is given by `inform-project-file', or the current
+file if this is NIL.  Will kill any running interpreter if
+`inform-interpreter-kill-old-process' is non-NIL.  Switches to the
+interpreter's output buffer if `inform-interpreter-is-graphical' is
+NIL."
   (interactive)
-  (let ((tab-width 4))
-    (untabify (point-min) (point-max))))
+  (let* ((project-file (inform-project-file))
+         (story-file-base (if (string-match "\\`[^.]+\\(\\.inf\\'\\)"
+                                            project-file)
+                              (substring project-file 0 (match-beginning 1))
+                            project-file))
+         (story-file (concat story-file-base
+                             (if (string-match "-v8" inform-command-options)
+                                 ".z8"
+                               ".z5")))
+         (name "Inform interpreter"))
+    (if  (or (symbolp inform-interpreter-command)
+             (functionp inform-interpreter-command))
+        ;; Emacs interpreter (or custom function)
+        (funcall inform-interpreter-command story-file)
+      ;; inform-interpreter-command is truly a command
+      (let* ((buffer (get-buffer-create (concat "*" name "*")))
+             (proc (get-buffer-process buffer)))
+        (and inform-interpreter-kill-old-process
+             proc
+             (kill-process proc))
+        (if (or inform-interpreter-is-graphical
+                (eq window-system 'w32)) ; Windows can't handle
+                                        ; term-exec anyway
+            (progn
+              ;; X gets confused if an application is restarted too quickly
+              ;; Assume X if not Win32
+              (unless (eq window-system 'w32)
+                (message "Waiting for X...")
+                ;; On my system 0.1 seconds was enough - double it for safety
+                (sleep-for 0.2)
+                (message ""))
+              (when (or inform-interpreter-kill-old-process
+                        (not proc))
+                (apply (function start-process)
+                       name buffer inform-interpreter-command
+                       ;; Some shells barf on "empty" arguments
+                       (if (string-equal "" inform-interpreter-options)
+                           (list story-file)
+                         (list inform-interpreter-options
+                               story-file)))))
+          ;; Console-mode 'terp
+          (require 'term)
+          (when (or inform-interpreter-kill-old-process
+                    (not proc))
+            (set-buffer buffer)
+            (term-mode)
+            (erase-buffer)
+            (term-exec buffer name inform-interpreter-command nil
+                       (if (string-equal "" inform-interpreter-options)
+                           (list story-file)
+                         (list inform-interpreter-options
+                               story-file)))
+            (term-char-mode)
+            (term-pager-disable))
+          (switch-to-buffer buffer)
+          (goto-char (point-max)))))))
+
 
 
 ;;;

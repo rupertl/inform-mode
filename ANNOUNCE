@@ -1,4 +1,4 @@
-Subject: [ANNOUNCE] emacs inform-mode 1.5.7 released
+Subject: [ANNOUNCE] emacs inform-mode 1.5.8 released
 
 This is to announce the release of a new version of inform-mode, a
 major mode for editing Inform files in Emacs.  The code has been
@@ -7,9 +7,38 @@ to if-archive/programming/editors. It is also available from the
 inform-mode home page:
         http://rupert-lane.org/inform-mode/
 
-Changes in version 1.5.7:
+New feature in version 1.5.8:
 
-* Fixed bug in fontification on GNU Emacs 21
+* inform-run-project (C-c C-c) runs an interpreter on the z-code file
+  for the current project. This allows you to test games from within
+  the development environment.
+
+  If 'inform-interpreter-command' is a string (eg "frotz") then it
+  will be run as an external program. This program can either be a
+  standalone program like xzip or winfrotz, or it can be a
+  character-based application like frotz or jzip: in the latter case,
+  set 'inform-interpreter-is-graphical' to nil and inform-mode will
+  run it in a terminal window using 'term' mode.
+
+  If 'inform-interpreter-command' is a symbol then inform-mode will
+  call it as an Emacs Lisp function, which is useful if you want to
+  run malyon on it or have a custom function you want to run on the
+  story file.
+ 
+
+Bug fixes:
+
+* Don't fontify semicolon after keyword.
+* Fontify double-quoted dictionary words properly.
+* Expand filenames sent to inform-project-file-list.
+* inform-retagify should now work on NT systems.
+* Don't move point unnecessarily in inform-indent-line.
+
+
+The following obsolete function has been removed:
+
+* inform-convert-old-format
+
 
 If you find any bugs please report them to me at
         rupert@rupert-lane.org
@@ -21,6 +50,10 @@ redistribute it and/or modify it under the terms of the GNU General
 Public License as published by the Free Software Foundation; either
 version 2, or (at your option) any later version.
    
-Thanks to Derek Feddon for bug reports and testing.
+Thanks to Stephen Silver and Espen Wiborg for their very useful
+bug-reports and patches.
    
 R  
+
+
+
