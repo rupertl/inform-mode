@@ -3,8 +3,8 @@
 ;; Original-Author: Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
 ;; Maintainer: Rupert Lane <rupert@merguez.demon.co.uk>
 ;; Created: 1 Dec 1994
-;; Version: 1.5.5
-;; Released: 4 September 2000
+;; Version: 1.5.6
+;; Released: 17 Dec 2000
 ;; Keywords: languages
 
 ;;; Copyright:
@@ -65,7 +65,7 @@
 ;;; General variables
 ;;;
 
-(defconst inform-mode-version "1.5.5")
+(defconst inform-mode-version "1.5.6")
 
 (defvar inform-maybe-other 'c-mode
   "*`inform-maybe-mode' runs this if current file is not in Inform mode.")
@@ -348,33 +348,32 @@ That is, one found at the start of a line.")
      ;; Keywords that declare variable or constant names.
      (list (concat "^#?\\("
                    (inform-make-regexp inform-defining-list nil t)
-                   "\\)\\s-+\\(\\(\\w\\|\\s_\\)+\\)")
+		   "\\)\\s-+\\(->\\s-+\\)*\\(\\(\\w\\|\\s_\\)+\\)")
            '(1 font-lock-keyword-face)
-           '(4 font-lock-function-name-face))
+           '(5 font-lock-function-name-face))
 
      ;; Other directives.
      (cons inform-directive-regexp 'font-lock-keyword-face)
 
      ;; Single quoted strings, length > 1, are dictionary words
-     '("'\\(\\w\\w+\\(//\\w*\\)*\\)'" (1 inform-dictionary-word-face append))
+     '("'\\(\\(-\\|\\w\\)\\(\\(-\\|\\w\\)+\\(//\\w*\\)?\\|//\\w*\\)\\)'"
+       (1 inform-dictionary-word-face append))
 
      ;; Also quoted words after "name" property
-     '("\\s-+\\(with\\)*\\s-+name\\s-+"
-       (0 font-lock-variable-name-face t)       
-       ("\"\\(\\w+\\)\"" nil nil 
-        (1  inform-dictionary-word-face t)))
+     '("\\s-name\\s-+"
+       ("\"\\(\\(-\\|\\w\\)+\\)\"" nil nil
+        (1 inform-dictionary-word-face t)))
 
-     ;; `class', `has' and `with' in objects.
-     '("^\\s-+\\(class\\|has\\|with\\)\\(\\s-\\|$\\)"
+     ;; `private', `class', `has' and `with' in objects.
+     '("^\\s-+\\(private\\|class\\|has\\|with\\)\\(\\s-\\|$\\)"
        (1 font-lock-keyword-face))
-
 
      ;; Attributes and properties.
      (cons (concat "[^#]\\<\\("
                    (inform-make-regexp (append inform-attribute-list
                                                inform-property-list))
                    "\\)\\>")
-           font-lock-variable-name-face)))
+           '(1 font-lock-variable-name-face))))
   "Expressions to fontify in Inform mode.")
 
 
@@ -475,7 +474,7 @@ That is, one found at the start of a line.")
     Indentation of a property or attribute in an object declaration.
 
   inform-indent-has-with-class \(1\)
-    Indentation of has/with/class lines in object declaration.
+    Indentation of has/with/class/private lines in object declaration.
 
   inform-indent-level \(4\)
     Indentation of line of code in a block relative to the first line of
@@ -490,8 +489,8 @@ That is, one found at the start of a line.")
     to the first.
 
   inform-indent-fixup-space \(T\)
-    If non-NIL, fix up space after `Object', `Class', `Nearby', `has'
-    and `with', so that all the object's properties line up.
+    If non-NIL, fix up space after `Object', `Class', `Nearby', `has',
+    `private' and `with', so that all the object's properties line up.
 
   inform-indent-action-column \(40\)
     Column at which action names should be placed in verb declarations.
@@ -638,6 +637,7 @@ That is, one found at the start of a line.")
 ;;  has        The "has" keyword
 ;;  with       The "with" keyword
 ;;  class      The "class" keyword
+;;  private    The "private" keyword
 ;;  property   A property or attribute
 ;;  other      Any other line not in a function body
 ;;  string     The line begins inside a string
@@ -698,9 +698,9 @@ That is, one found at the start of a line.")
                ((looking-at inform-label-regexp) 'label)
                (t 'code))
 
-       ;; Otherwise there are a bunch of special cases (has, with,
-       ;; class, properties) that must be checked for.  Note that we
-       ;; have to distinguish between global class declarations and
+       ;; Otherwise there are a bunch of special cases (has, with, class,
+       ;; and private properties) that must be checked for.  Note that
+       ;; we have to distinguish between global class declarations and
        ;; class membership in an object declaration.  This is done by
        ;; looking for a preceding semicolon.
        (cond ((nth 3 state) 'string)
@@ -719,6 +719,7 @@ That is, one found at the start of a line.")
              ((not in-obj) 'other)
              ((looking-at "\\s-*has\\(\\s-\\|$\\)") 'has)
              ((looking-at "\\s-*with\\(\\s-\\|$\\)") 'with)
+             ((looking-at "\\s-*private\\(\\s-\\|$\\)") 'private)
              ((or (eq (inform-preceding-char) ?,)
                   (looking-at inform-property-regexp))
               'property)
@@ -791,7 +792,7 @@ That is, one found at the start of a line.")
       (inform-line-up-comment
        (if in-obj inform-indent-property 0)))
      ((eq syntax 'action) inform-indent-level)
-     ((memq syntax '(has with class)) inform-indent-has-with-class)
+     ((memq syntax '(has with class private)) inform-indent-has-with-class)
 
      ;; We are inside a sexp of some sort.
      (t
@@ -1003,8 +1004,9 @@ comments, return CURRENT-INDENT."
 ;; Indent the line containing point; DATA is assumed to have been
 ;; returned from `inform-syntax-class', called at the *start* of the
 ;; current line.  It is assumed that point is at the start of the line.
-;; Fixes up the spacing on `has', `with', `object', `nearby' and `class'
-;; lines.  Returns T if a change was made, NIL otherwise.  Moves point.
+;; Fixes up the spacing on `has', `with', `object', `nearby', `private'
+;; and `class' lines.  Returns T if a change was made, NIL otherwise.
+;; Moves point.
 
 (defun inform-do-indent-line (data)
   (skip-syntax-forward " ")
@@ -1014,10 +1016,10 @@ comments, return CURRENT-INDENT."
     ;; Fix up space if appropriate, return changed flag.
     (or
      (cond
-      ((and (memq syntax '(directive has with class))
+      ((and (memq syntax '(directive has with class private))
             inform-indent-fixup-space
             (looking-at
-             "\\(object\\|class\\|nearby\\|has\\|with\\)\\(\\s-+\\|$\\)"))
+             "\\(object\\|class\\|nearby\\|has\\|with\\|private\\)\\(\\s-+\\|$\\)"))
        (goto-char (match-end 0))
        (inform-indent-to inform-indent-property))
       ((and (eq syntax 'action)
@@ -1342,11 +1344,11 @@ With a negative prefix arg, go forwards."
 
 (defun inform-imenu-extract-name ()
   (if (looking-at
-       "^#?\\(object\\|nearby\\|class\\)\\s-+\\(\\(\\w\\|\\s_\\)+\\)")
+       "^#?\\(object\\|nearby\\|class\\)\\s-+\\(->\\s-+\\)*\\(\\(\\w\\|\\s_\\)+\\)")
       (concat (if (string= "class" (downcase (match-string 1)))
                   "Class ")
-              (buffer-substring-no-properties (match-beginning 2)
-                                              (match-end 2)))))
+              (buffer-substring-no-properties (match-beginning 3)
+                                              (match-end 3)))))
 
 (defun inform-build-project ()
   "Compile the current Inform project.
