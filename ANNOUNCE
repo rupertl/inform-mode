@@ -4,11 +4,15 @@ soon be moved to if-archive/programming/editors. It is also available
 from the inform-mode home page:
 	http://www.merguez.demon.co.uk/inform-mode/
 
-Version 1.5.4 fixes a few minor bugs. In detail:
-* Dictionary words are now fontified using
-  inform-dictionary-word-face, as font-lock-constant-face is not
-  available on all Emacsen.
-* Actions (eg ##Examine) are indented properly.
+Version 1.5.5 fixes a few more bugs. In detail:
+* strings with '^' and '//' are now fontified properly
+* non-directives ending with directive names (eg 'JObject') are now 
+  fontified properly
+* comment line-up (ie with inform-comments-line-up-p non-nil) is no
+  longer confused by '!' in code
+* multi-line switch labels indented properly
+* indentation of multi-line strings now handled by inform-strings-line-up-p 
+
 
 If you find any bugs please report them to me at
 	rupert@merguez.demon.co.uk. 
@@ -19,6 +23,9 @@ maintained by Michael Fessler. It is free software; you can
 redistribute it and/or modify it under the terms of the GNU General
 Public License as published by the Free Software Foundation; either
 version 2, or (at your option) any later version.
+
+Thanks to Jonadab the Unsightly One and Top Changwatchai for bug
+reports from the previous version.
 
 R
    
