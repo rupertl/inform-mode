@@ -1,4 +1,4 @@
-Subject:  [Announce] emacs inform-mode 1.5.2 released
+Subject:  [Announce] emacs inform-mode 1.5.3 released
 
 This is to announce the release of a new version of inform-mode. The
 code has been uploaded to incoming/if-archive on ftp.gmd.de and should
@@ -6,17 +6,9 @@ soon be moved to if-archive/programming/editors. It is also available
 from the inform-mode home page:
     http://www.merguez.demon.co.uk/inform-mode/
 
-Version 1.5.2 fixes a few bugs and adds two new features. In detail:
+Version 1.5.3 fixes the following bug:
 
-* Objects that start with a class line should now be indented properly.
-* You can now spell-check all double-quoted strings in the buffer using
-  the keystroke 'C-c C-s' (inform-spell-check-buffer). This assumes that
-  you have the GNU 'ispell' program on your system.
-* If you set the variable 'inform-comments-line-up-p' to non-NIL,
-  comments spread out over several lines will start on the same
-  column as the first comment line.
-* '#ifdef'/'#endif' blocks should be indented properly.
-* Indentation bug in first property of class or object fixed.
+* Dictionary words are fontified using font-lock-constant-face. 
    
 If you find any bugs please report them to me at
      rupert@merguez.demon.co.uk.
@@ -39,7 +31,4 @@ redistribute it and/or modify it under the terms of the GNU General
 Public License as published by the Free Software Foundation; either
 version 2, or (at your option) any later version.
 
-Thanks to Daniel Barkalow, Jonadab the Unsightly One and Christopher
-Scott for bug reports and general feedback.
-   
 R

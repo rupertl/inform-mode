@@ -3,8 +3,8 @@
 ;; Original-Author: Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
 ;; Maintainer: Rupert Lane <rupert@merguez.demon.co.uk>
 ;; Created: 1 Dec 1994
-;; Version: 1.5.2
-;; Released: 15 Dec 1999
+;; Version: 1.5.3
+;; Released: 23 May 2000
 ;; Keywords: languages
 
 ;;; Copyright:
@@ -64,7 +64,7 @@
 ;;; General variables
 ;;;
 
-(defconst inform-mode-version "1.5.2")
+(defconst inform-mode-version "1.5.3")
 
 (defvar inform-maybe-other 'c-mode
   "*`inform-maybe-mode' runs this if current file is not in Inform mode.")
@@ -328,7 +328,7 @@ That is, one found at the start of a line.")
 ;;;
 
 (defvar inform-font-lock-defaults
-  '(inform-font-lock-keywords nil t ((?_ . "w")) inform-prev-object)
+  '(inform-font-lock-keywords nil t ((?_ . "w") (?' . "$")) inform-prev-object)
   "Font Lock defaults for Inform mode.")
 
 (defvar inform-font-lock-keywords
@@ -350,6 +350,15 @@ That is, one found at the start of a line.")
 
      ;; Other directives.
      (cons inform-directive-regexp 'font-lock-keyword-face)
+
+	 ;; Single quoted strings, length > 1, are dictionary words
+	 '("'\\(\\w\\w+\\)'" (1 font-lock-constant-face append))
+
+	 ;; Also quoted words after "name" property
+	 '("\\s-+\\(with\\)*\\s-+name\\s-+"
+	   (0 font-lock-variable-name-face t)       
+	   ("\"\\(\\w+\\)\"" nil nil 
+		(1  font-lock-constant-face t)))
 
      ;; `class', `has' and `with' in objects.
      '("^\\s-+\\(class\\|has\\|with\\)\\(\\s-\\|$\\)"
