@@ -376,10 +376,11 @@ That is, one found at the start of a line.")
     (list
 
      ;; Inform code keywords
-     (cons (concat "\\s-\\("
+     ;; Handles two keywords in a row, eg 'else return'
+     (cons (concat "\\b"
                    (inform-make-regexp inform-code-keyword-list)
-                   "\\)\\(\\s-\\|$\\|;\\)")
-           '(1 font-lock-keyword-face))
+                   "\\b")
+           'font-lock-keyword-face)
      
      ;; Keywords that declare variable or constant names.
      (list 
