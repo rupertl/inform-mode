@@ -292,8 +292,8 @@ keyword.")
       "door_dir" "door_to" "each_turn" "found_in" "grammar" "initial"
       "inside_description" "invent" "life" "list_together" "name" "number"
       "orders" "parse_name" "plural" "react_after" "react_before"
-      "short_name" "time_left" "time_out" "when_closed" "when_open"
-      "when_on" "when_off" "with_key")
+      "short_name" "short_name_indef" "time_left" "time_out" "when_closed"
+      "when_open" "when_on" "when_off" "with_key")
     "List of Inform properties defined in the library.")
 
   (defvar inform-code-keyword-list
