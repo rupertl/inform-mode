@@ -249,11 +249,12 @@ first line.")
   (defvar inform-directive-list
     '("abbreviate" "array" "attribute" "btrace" "class" "constant"
       "default" "dictionary" "end" "endif" "etrace" "extend" "fake_action"
-      "global" "ifdef" "ifndef" "iftrue" "iffalse" "ifv3" "ifv5" "import"
-      "include" "link" "listsymbols" "listdict" "listverbs" "lowstring"
-      "ltrace" "message" "nearby" "nobtrace" "noetrace" "noltrace" "notrace"
-      "object" "property" "release" "replace" "serial" "statusline" "stub"
-      "switches" "system_file" "trace" "verb" "zcharacter")
+      "global" "ifdef" "iffalse" "ifndef" "ifnot" "iftrue" "ifv3" "ifv5"
+      "import" "include" "link" "listsymbols" "listdict" "listverbs"
+      "lowstring" "ltrace" "message" "nearby" "nobtrace" "noetrace"
+      "noltrace" "notrace" "object" "property" "release" "replace" "serial"
+      "statusline" "stub" "switches" "system_file" "trace" "verb"
+      "version" "zcharacter")
     "List of Inform directives that shouldn't appear embedded in code.")
 
   (defvar inform-defining-list
