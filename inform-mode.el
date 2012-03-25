@@ -297,11 +297,11 @@ keyword.")
 
   (defvar inform-code-keyword-list
     '("box" "break" "continue" "do" "else" "font off" "font on" "for"
-      "give" "has" "hasnt" "if" "inversion" "jump" "move" "new_line" "notin"
-      "objectloop" "ofclass" "print" "print_ret" "quit" "read" "remove"
-      "restore" "return" "rfalse" "rtrue" "save" "spaces" "string"
-      "style bold" "style fixed" "style reverse" "style roman" "style underline"
-      "switch" "to" "until" "while")
+      "give" "has" "hasnt" "if" "in" "inversion" "jump" "move" "new_line"
+      "notin" "objectloop" "ofclass" "or" "print" "print_ret" "provides"
+      "quit" "read" "remove" "restore" "return" "rfalse" "rtrue" "save"
+      "spaces" "string" "style bold" "style fixed" "style reverse"
+      "style roman" "style underline" "switch" "to" "until" "while")
     "List of Inform code keywords.")
   )
 
