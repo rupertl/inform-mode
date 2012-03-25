@@ -3,15 +3,15 @@
 ;; Original-Author: Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
 ;; Maintainer: Rupert Lane <rupert@rupert-lane.org>
 ;; Created: 1 Dec 1994
-;; Version: 1.5.8
-;; Released: 3 Sep 2002
+;; Version: 1.6.0 (testing)
+;; Released: 
 ;; Keywords: languages
 
 ;;; Copyright:
 
 ;; Copyright (c) by Gareth Rees 1996
 ;; Portions copyright (c) by Michael Fessler 1997-1998
-;; Portions copyright (c) by Rupert Lane 1999-2000, 2002
+;; Portions copyright (c) by Rupert Lane 1999-2012
 
 ;; inform-mode is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@
 ;;; General variables
 ;;;
 
-(defconst inform-mode-version "1.5.8")
+(defconst inform-mode-version "1.6.0 (testing)")
 
 (defvar inform-maybe-other 'c-mode
   "*`inform-maybe-mode' runs this if current file is not in Inform mode.")
@@ -907,7 +907,7 @@ That is, one found at the start of a line.")
           ;; If line is in parentheses, indent to opening parenthesis.
           (if (eq paren-char ?\()
               (setq indent (progn (goto-char paren) (1+ (current-column))))
-        
+
             ;; Line not in parentheses.
             (setq prec-token (inform-preceding-token)
                   this-char (following-char))
@@ -1012,7 +1012,7 @@ That is, one found at the start of a line.")
         ;; Handle comments specially if told to line them up
         (if (looking-at (concat "\\s-*" comment-start))
             (setq indent (inform-line-up-comment indent)))
-                        
+
         indent)))))
 
 
@@ -1044,7 +1044,7 @@ comments, return CURRENT-INDENT."
                    (setq done t))))
           indent))
     current-indent))
-      
+
 
 ;; Modifies whitespace to the left of point so that the character after
 ;; point is at COLUMN.  If this is impossible, one whitespace character
@@ -1279,7 +1279,7 @@ table."
            (concat "--output=" tags-file)
            "--language=none"
            files)
-        
+    
     (message "Running external tags program...done")
     (inform-auto-load-tags-table)))
 
@@ -1535,7 +1535,7 @@ NIL."
               (setq spell-continue
                     (and ispell-process
                          (eq (process-status ispell-process) 'run)))))))))
-        
+
 
 
 (provide 'inform-mode)
