@@ -1277,7 +1277,7 @@ table."
     (apply (function call-process)
            inform-etags-program
            nil nil nil
-           "--regex=/\\([oO]bject\\|[nN]earby\\|[cC]lass\\|\\[\\)\\([ \\t]*->\\)*[ \\t]*\\([A-Za-z0-9_]+\\)/"
+           "--regex=/\\([A-Za-z0-9_]+\\|\\[\\)\\([ \\t]*->\\)*[ \\t]*\\<\\([A-Za-z_][A-Za-z0-9_]*\\)/\\3/"
            (concat "--output=" tags-file)
            "--language=none"
            files)
