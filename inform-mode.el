@@ -65,6 +65,8 @@
 
 (require 'font-lock)
 (require 'regexp-opt)
+(require 'ispell)
+(require 'term)
 
 
 ;;;
@@ -304,7 +306,7 @@ keyword.")
   (defun inform-make-regexp (strings)
     (regexp-opt strings t)))
 
-(eval-and-compile
+(eval-when-compile
   (defvar inform-directive-regexp
     (concat "\\<#?\\("
             (inform-make-regexp inform-directive-list)
@@ -1346,10 +1348,10 @@ Insert newlines before and after if `inform-auto-newline' is non-NIL."
                  (if inform-auto-newline
                      (progn (inform-indent-line) (newline) t) nil)))
         (progn
-          (insert last-command-char)
+          (insert last-command-event)
           (inform-indent-line)
           (end-of-line)
-          (if (and inform-auto-newline (/= last-command-char ?\]))
+          (if (and inform-auto-newline (/= last-command-event ?\]))
               (progn
                 (newline)
                 (setq insertpos (1- (point)))
@@ -1374,10 +1376,9 @@ With a prefix arg, go forward that many declarations.
 With a negative prefix arg, search backwards."
   (interactive "P")
   (let ((fun 're-search-forward)
-        (errstring "more")
         (n (prefix-numeric-value arg)))
     (cond ((< n 0)
-           (setq fun 're-search-backward errstring "previous" n (- n)))
+           (setq fun 're-search-backward n (- n)))
           ((looking-at inform-real-object-regexp)
            (setq n (1+ n))))
     (prog1
