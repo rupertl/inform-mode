@@ -306,7 +306,7 @@ keyword.")
   (defun inform-make-regexp (strings)
     (regexp-opt strings t)))
 
-(eval-when-compile
+(eval-and-compile
   (defvar inform-directive-regexp
     (concat "\\<#?\\("
             (inform-make-regexp inform-directive-list)
