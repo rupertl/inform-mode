@@ -1149,7 +1149,7 @@ comments, return CURRENT-INDENT."
              (let* ((indent-col (prog2
                                     (insert ?\n)
                                     (inform-calculate-indentation data)
-                                  (delete-backward-char 1)))
+                                  (delete-char -1)))
                     (start (search-backward "\""))
                     (end (search-forward "\"" nil nil 2))
                     (fill-column (- fill-column 2))
