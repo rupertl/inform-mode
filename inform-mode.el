@@ -67,6 +67,7 @@
 (require 'regexp-opt)
 (require 'ispell)
 (require 'term)
+(require 'compile)
 
 
 ;;;
@@ -238,6 +239,19 @@ first line.")
   (modify-syntax-entry ?+ "." inform-mode-syntax-table)
   (modify-syntax-entry ?| "." inform-mode-syntax-table)
   (modify-syntax-entry ?^ "w" inform-mode-syntax-table))
+
+
+;;;
+;;; Build and run variables
+;;;
+
+(defvar inform-compilation-error-regexp-alist 
+  '((inform-e1 
+     "^[ \t]*\\(\\(?:[a-zA-Z]:\\)?[^:(\t\n]+\\)(\\([0-9]+\\)): ?\
+\\(?:\\(Error\\)\\|\\(Warning\\)\\):"
+     1 2 nil (4)))
+  "*Alist matching compilation errors for inform -E1 style output.")
+
 
 
 ;;; Keyword definitions-------------------------------------------------------
@@ -1408,6 +1422,22 @@ With a negative prefix arg, go forwards."
 ;;;
 ;;; Build and run project
 ;;;
+
+;; Tell Emacs how to parse inform compiler output so next-error can be
+;; used to jump to any errors. This is done at load time so the regexp
+;; is set up before compilation starts. 
+;; XEmacs compile mode's builtin regexps work OK.
+
+(if (featurep 'emacs)
+    (if (and (boundp 'compilation-error-regexp-alist-alist)
+             (not (assoc 'inform-e1 compilation-error-regexp-alist-alist)))
+        (mapc
+         (lambda (item)
+           (push (car item) compilation-error-regexp-alist)
+           (push item compilation-error-regexp-alist-alist))
+         inform-compilation-error-regexp-alist)))
+
+
 
 (defun inform-build-project ()
   "Compile the current Inform project.
