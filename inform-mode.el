@@ -71,22 +71,46 @@
 
 
 ;;;
+;;; Customize support
+;;;
+
+(defgroup inform-mode nil
+  "Settings for Inform source code."
+  :group 'languages)
+
+(defgroup inform-mode-indent nil
+  "Customize indentation and highlighting of Inform source coee."
+  :group 'inform-mode)
+
+(defgroup inform-mode-build-run nil
+  "Customize build and run options for Inform code."
+  :group 'inform-mode)
+
+
+
+;;;
 ;;; General variables
 ;;;
 
 (defconst inform-mode-version "1.6.0 (testing)")
 
-(defvar inform-maybe-other 'c-mode
-  "*`inform-maybe-mode' runs this if current file is not in Inform mode.")
+(defcustom inform-maybe-other 'c-mode
+  "*`inform-maybe-mode' runs this if current file is not in Inform mode."
+  :type 'function
+  :group 'inform-mode)
 
-(defvar inform-startup-message t
-  "*Non-nil means display a message when Inform mode is loaded.")
+(defcustom inform-startup-message t
+  "*Non-nil means display a message when Inform mode is loaded."
+  :type 'boolean
+  :group 'inform-mode)
 
-(defvar inform-auto-newline t
+(defcustom inform-auto-newline t
   "*Non-nil means automatically newline before and after braces, and after 
 semicolons.
 If you do not want a leading newline before opening braces then use:
-  \(define-key inform-mode-map \"{\" 'inform-electric-semi\)")
+  \(define-key inform-mode-map \"{\" 'inform-electric-semi\)"
+  :type 'boolean
+  :group 'inform-mode)
 
 (defvar inform-mode-map nil
   "Keymap for Inform mode.")
@@ -138,79 +162,75 @@ If you do not want a leading newline before opening braces then use:
 
 (define-abbrev-table 'inform-mode-abbrev-table nil)
 
-(defvar inform-project-file nil
-  "*The top-level Inform project file to which the current file belongs.")
-(make-variable-buffer-local 'inform-project-file)
-
-(defvar inform-autoload-tags t
-  "*Non-nil means automatically load tags table when entering Inform mode.")
-
-(defvar inform-etags-program "etags"
-  "The shell command with which to run the etags program.")
-
-(defvar inform-command "inform"
-  "*The shell command with which to run the Inform compiler.")
-
-(defvar inform-libraries-directory nil
-  "*If non-NIL, gives the directory in which libraries are found.")
-
-(defvar inform-command-options ""
-  "*Options with which to call the Inform compiler.")
-
-(defvar inform-interpreter-command "frotz"
-  "*The command with which to run the ZCode interpreter.
-If a string, the name of a command.  If a symbol or a function value, an
-Emacs-lisp function to be called with the name of the story file.")
-
-(defvar inform-interpreter-options ""
-  "*Additional options with which to call the ZCode interpreter.
-Only used if `inform-interpreter-command' is a string.")
-
-(defvar inform-interpreter-kill-old-process t
-  "*Whether to kill the old interpreter process when starting a new one.")
-
-(defvar inform-interpreter-is-graphical nil
-  "*Controls whether `inform-interpreter-command' will be run in a buffer.
-If NIL, `inform-run-project' will switch to the interpreter buffer after
-running the interpreter.")
-
 
 
 ;;;
 ;;; Indentation parameters
 ;;;
 
-(defvar inform-indent-property 8
-  "*Indentation of the start of a property declaration.")
+(defcustom inform-indent-property 8
+  "*Indentation of the start of a property declaration."
+  :type 'integer
+  :group 'inform-mode-indent)
+(put 'inform-indent-property 'safe-local-variable 'integerp)
 
-(defvar inform-indent-has-with-class 1
-  "*Indentation of has/with/class lines in object declarations.")
+(defcustom inform-indent-has-with-class 1
+  "*Indentation of has/with/class lines in object declarations."
+  :type 'integer
+  :group 'inform-mode-indent)
+(put 'inform-indent-has-with-class 'safe-local-variable 'integerp)
 
-(defvar inform-indent-level 4
-  "*Indentation of lines of block relative to first line of block.")
+(defcustom inform-indent-level 4
+  "*Indentation of lines of block relative to first line of block."
+  :type 'integer
+  :group 'inform-mode-indent)
+(put 'inform-indent-level 'safe-local-variable 'integerp)
 
-(defvar inform-indent-label-offset -3
-  "*Indentation of label relative to where it should be.")
+(defcustom inform-indent-label-offset -3
+  "*Indentation of label relative to where it should be."
+  :type 'integer
+  :group 'inform-mode-indent)
+(put 'inform-indent-label-offset 'safe-local-variable 'integerp)
 
-(defvar inform-indent-cont-statement 4
-  "*Indentation of continuation relative to start of statement.")
+(defcustom inform-indent-cont-statement 4
+  "*Indentation of continuation relative to start of statement."
+  :type 'integer
+  :group 'inform-mode-indent)
+(put 'inform-indent-cont-statement 'safe-local-variable 'integerp)
 
-(defvar inform-indent-fixup-space t
-  "*If non-NIL, fix up space in object declarations.")
+(defcustom inform-indent-fixup-space t
+  "*If non-NIL, fix up space in object declarations."
+  :type 'boolean
+  :group 'inform-mode-indent)
+(put 'inform-indent-fixup-space 'safe-local-variable 'booleanp)
 
-(defvar inform-indent-action-column 40
-  "*Column at which action names should be placed in verb declarations.")
+(defcustom inform-indent-action-column 40
+  "*Column at which action names should be placed in verb declarations."
+  :type 'integer
+  :group 'inform-mode-indent)
+(put 'inform-indent-action-column 'safe-local-variable 'integerp)
 
-(defvar inform-comments-line-up-p nil
-  "*If non-nil, comments spread over several lines will line up with the first.")
+(defcustom inform-comments-line-up-p nil
+  "*If non-nil, comments spread over several lines will line up with the first."
+  :type 'boolean
+  :group 'inform-mode-indent)
+(put 'inform-comments-line-up-p 'safe-local-variable 'booleanp)
 
-(defvar inform-strings-line-up-p nil
+(defcustom inform-strings-line-up-p nil
   "*Variable controlling indentation of multi-line strings.
 If nil (default), string will be indented according to context.
 If a number, will always set the indentation to that column.
 If 'char', will line up with the first character of the string.
 If 'quote', or other non-nil value, will line up with open quote on 
-first line.")
+first line."
+  :type '(radio (const :tag "Indent accoridng to context" nil)
+                (integer :tag "Column to indent to")
+                (const :tag "Line up with first character of string" char)
+                (const :tag "Line up with open quote on first line" quote))
+  :group 'inform-mode-indent)
+(put 'inform-strings-line-up-p 'safe-local-variable 'sexp)
+
+
 
 ;;;
 ;;; Syntax variables
@@ -245,12 +265,72 @@ first line.")
 ;;; Build and run variables
 ;;;
 
+(defcustom inform-project-file nil
+  "*The top-level Inform project file to which the current file belongs."
+  :type '(radio (file :tag "Project file name")
+                (const :tag "Disabled" nil))
+  :group 'inform-mode-build-run)
+
+(make-variable-buffer-local 'inform-project-file)
+
+(defcustom inform-autoload-tags t
+  "*Non-nil means automatically load tags table when entering Inform mode."
+  :type 'boolean
+  :group 'inform-mode-build-run)
+
+(defcustom inform-etags-program "etags"
+  "*The shell command with which to run the etags program."
+  :type 'string
+  :group 'inform-mode-build-run)
+
+(defcustom inform-command "inform"
+  "*The shell command with which to run the Inform compiler."
+  :type 'string
+  :group 'inform-mode-build-run)
+
+(defcustom inform-libraries-directory nil
+  "*If non-NIL, gives the directory in which libraries are found."
+  :type '(radio (directory :tag "Library directory")
+                (const :tag "Disabled" nil))
+  :group 'inform-mode-build-run)
+
+(defcustom inform-command-options ""
+  "*Options with which to call the Inform compiler."
+  :type 'string
+  :group 'inform-mode-build-run)
+
+(defcustom inform-interpreter-command "frotz"
+  "*The command with which to run the ZCode interpreter.
+If a string, the name of a command.  If a symbol or a function value, an
+Emacs-lisp function to be called with the name of the story file."
+  :type '(choice (string :tag "Command to run the ZCode interpreter")
+                 (function :tag "Emacs-lisp function to run on the file"))
+  :group 'inform-mode-build-run)
+
+(defcustom inform-interpreter-options ""
+  "*Additional options with which to call the ZCode interpreter.
+Only used if `inform-interpreter-command' is a string."
+  :type 'string
+  :group 'inform-mode-build-run)
+
+(defcustom inform-interpreter-kill-old-process t
+  "*Whether to kill the old interpreter process when starting a new one."
+  :type 'boolean
+  :group 'inform-mode-build-run)
+
+(defcustom inform-interpreter-is-graphical nil
+  "*Controls whether `inform-interpreter-command' will be run in a buffer.
+If NIL, `inform-run-project' will switch to the interpreter buffer after
+running the interpreter."
+  :type 'boolean
+  :group 'inform-mode-build-run)
+
 (defvar inform-compilation-error-regexp-alist 
   '((inform-e1 
      "^[ \t]*\\(\\(?:[a-zA-Z]:\\)?[^:(\t\n]+\\)(\\([0-9]+\\)): ?\
 \\(?:\\(Error\\)\\|\\(Warning\\)\\):"
      1 2 nil (4)))
-  "*Alist matching compilation errors for inform -E1 style output.")
+  "Alist matching compilation errors for inform -E1 style output.")
 
 
 
@@ -368,7 +448,8 @@ That is, one found at the start of a line.")
   '((((class color) (background light)) (:foreground "Red"))
     (((class color) (background dark)) (:foreground "Pink"))
     (t (:italic t :bold t)))
-  "Font lock mode face used to highlight dictionary words.")
+  "Font lock mode face used to highlight dictionary words."
+  :group 'inform-mode)
 
 (defvar inform-dictionary-word-face 'inform-dictionary-word-face
   "Variable for Font lock mode face used to highlight dictionary words.")
@@ -621,7 +702,6 @@ That is, one found at the start of a line.")
         imenu-prev-index-position-function 'inform-prev-object
         indent-line-function 'inform-indent-line
         indent-region-function 'inform-indent-region
-        inform-startup-message nil
         local-abbrev-table inform-mode-abbrev-table
         major-mode 'inform-mode
         mode-name "Inform"
