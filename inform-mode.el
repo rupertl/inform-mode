@@ -68,6 +68,7 @@
 (require 'ispell)
 (require 'term)
 (require 'compile)
+(require 'imenu)
 
 
 ;;;
