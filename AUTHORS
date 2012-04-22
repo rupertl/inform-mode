@@ -1,0 +1,27 @@
+Rupert Lane is the current maintainer of inform-mode. inform-mode was
+originally written by Gareth Rees and was previously maintained by
+Michael Fessler.
+
+Here is an list of other people that have made contributions to
+inform-mode (whether by code, bug reporting, patches, ideas,
+inspiration, testing or feedback):
+
+Daniel Barkalow
+Jonadab the Unsightly One
+Christopher Scott 
+Top Changwatchai
+Derek Feddon
+Dan Schmidt
+Stephen Silver
+Espen Wiborg
+Marshall T. Vandegrift
+Reuben Thomas
+Dave Robinson
+Samuel Bronson
+
+If I have missed anyone out please let me know.
+
+# Local Variables:
+# mode: text
+# fill-column: 72
+# End:

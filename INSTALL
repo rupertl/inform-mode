@@ -1,0 +1,82 @@
+Notes on installing inform-mode.
+
+There are three options to install inform-mode: via the package system
+on your Linux system; via the Makefile if you are on a Unix-derived
+system, have access to the 'make' program and have root access; or
+manually, which should work on all platforms. Each is described further
+below.
+
+1. Packaged versions
+--------------------
+
+The simplest way to install inform-mode if you are running Linux is via
+the package system. 
+
+On Debian, Ubuntu or other derivatives you can run
+
+    apt-get install inform-mode
+
+However, this may not provide the latest version: if you want this try
+one of the following two methods.
+
+
+2. Makefile
+-----------
+
+Edit the file 'Makefile' and replace the name of your emacs binary and
+site-lisp directory if they are different.
+
+Type
+
+    make
+
+to byte-compile the source. Then as root, eg using sudo:
+
+    make install
+
+to install the files to the site-lisp directory for your emacs so it is
+available for all users on your system.
+
+Finally, add the following to your .emacs:
+
+(autoload 'inform-mode "inform-mode" "Inform editing mode." t)
+(autoload 'inform-maybe-mode "inform-mode" "Inform/C header editing mode.")
+(setq auto-mode-alist
+      (append '(("\\.h\\'"   . inform-maybe-mode)
+                ("\\.inf\\'" . inform-mode))
+               auto-mode-alist))
+
+
+3. Manually
+-----------
+
+First, byte-compile the file by running the following command (all on
+one line):
+
+    emacs  -batch -q -no-site-file -eval "(setq load-path (cons (expand-file-name \".\") load-path))" --eval '(byte-compile-file "inform-mode.el")'
+
+Replace Emacs with 'xemacs' if you are using XEmacs. Ignore any
+byte-compile warnings.
+
+Next, copy inform-mode.elc to the directory you want to install it. If
+you put the file in a non-standard place, tell emacs where to find it by
+putting a line like:
+
+    (setq load-path (cons (expand-file-name "/path/to/file/") load-path))
+
+in your .emacs.
+
+Finally, add the following to your .emacs:
+
+(autoload 'inform-mode "inform-mode" "Inform editing mode." t)
+(autoload 'inform-maybe-mode "inform-mode" "Inform/C header editing mode.")
+(setq auto-mode-alist
+      (append '(("\\.h\\'"   . inform-maybe-mode)
+                ("\\.inf\\'" . inform-mode))
+               auto-mode-alist))
+
+
+# Local Variables:
+# mode: text
+# fill-column: 72
+# End:
