@@ -4,7 +4,7 @@
 ;; Maintainer: Rupert Lane <rupert@rupert-lane.org>
 ;; Created: 1 Dec 1994
 ;; Version: 1.6.0 (testing)
-;; Released: 
+;; Released: X May 2012
 ;; Keywords: languages
 
 ;;; Copyright:
@@ -15,7 +15,7 @@
 
 ;; inform-mode is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2, or (at your option)
+;; the Free Software Foundation; either version 3, or (at your option)
 ;; any later version.
 ;;
 ;; inform-mode is distributed in the hope that it will be useful, but
@@ -53,13 +53,14 @@
 ;; To turn on font locking add:
 ;; (add-hook 'inform-mode-hook 'turn-on-font-lock)
 
-;; If you use XEmacs and intend to use `inform-run-project' with a
-;; console-mode interpreter, you need to have the eterm package
-;; installed.  It should already be installed if you use XEmacs < 21,
-;; but starting with XEmacs 21.1 you may need to download and install
-;; it separately.
+;; Latest version of this mode can be found at
+;; http://www.rupert-lane.org/inform-mode/
 
 ;; Please send any bugs or comments to rupert@rupert-lane.org
+
+;;; History:
+
+;; See the NEWS file in the distribution
 
 ;;; Code:
 
@@ -106,8 +107,7 @@
   :group 'inform-mode)
 
 (defcustom inform-auto-newline t
-  "*Non-nil means automatically newline before and after braces, and after 
-semicolons.
+  "*Non-nil means automatically newline before/after braces, after semicolons.
 If you do not want a leading newline before opening braces then use:
   \(define-key inform-mode-map \"{\" 'inform-electric-semi\)"
   :type 'boolean
@@ -139,7 +139,7 @@ If you do not want a leading newline before opening braces then use:
     (define-key inform-mode-map [menu-bar] (make-sparse-keymap))
     (define-key inform-mode-map [menu-bar inform] (cons "Inform" map))
     (define-key map [separator4] '("--" . nil))
-    (define-key map [inform-spell-check-buffer] 
+    (define-key map [inform-spell-check-buffer]
       '("Spellcheck buffer" . inform-spell-check-buffer))
     (define-key map [ispell-region] '("Spellcheck region" . ispell-region))
     (define-key map [ispell-word] '("Spellcheck word" . ispell-word))
@@ -222,7 +222,7 @@ If you do not want a leading newline before opening braces then use:
 If nil (default), string will be indented according to context.
 If a number, will always set the indentation to that column.
 If 'char', will line up with the first character of the string.
-If 'quote', or other non-nil value, will line up with open quote on 
+If 'quote', or other non-nil value, will line up with open quote on
 first line."
   :type '(radio (const :tag "Indent accoridng to context" nil)
                 (integer :tag "Column to indent to")
@@ -326,8 +326,8 @@ running the interpreter."
   :type 'boolean
   :group 'inform-mode-build-run)
 
-(defvar inform-compilation-error-regexp-alist 
-  '((inform-e1 
+(defvar inform-compilation-error-regexp-alist
+  '((inform-e1
      "^[ \t]*\\(\\(?:[a-zA-Z]:\\)?[^:(\t\n]+\\)(\\([0-9]+\\)): ?\
 \\(?:\\(Error\\)\\|\\(Warning\\)\\):"
      1 2 nil (4)))
@@ -395,7 +395,7 @@ keyword.")
 
 ;; To do the work of building the regexps we use regexp-opt with the
 ;; paren option which ensures the result is enclosed by a grouping
-;; construct. 
+;; construct.
 
 (eval-and-compile
   (defun inform-make-regexp (strings)
@@ -467,7 +467,7 @@ That is, one found at the start of a line.")
            'font-lock-keyword-face)
      
      ;; Keywords that declare variable or constant names.
-     (list 
+     (list
       (concat "^#?"
               inform-defining-list-regexp
               "\\s-+\\(->\\s-+\\)*\\(\\(\\w\\|\\s_\\)+\\)")
@@ -633,7 +633,7 @@ That is, one found at the start of a line.")
     If nil (default), string will be indented according to context.
     If a number, will always set the indentation to that column.
     If 'char', will line up with the first character of the string.
-    If 'quote', or other non-nil value, will line up with open quote on 
+    If 'quote', or other non-nil value, will line up with open quote on
     first line.
 
 * User options to do with compilation:
@@ -670,8 +670,7 @@ That is, one found at the start of a line.")
     after running the interpreter.
 
 
-* Please send any bugs or comments to rupert@rupert-lane.org
-"
+* Please send any bugs or comments to rupert@rupert-lane.org"
 
   (interactive)
   (if inform-startup-message
@@ -714,7 +713,7 @@ That is, one found at the start of a line.")
   (run-hooks 'inform-mode-hook))
 
 (defun inform-maybe-mode ()
-  "Starts Inform mode if file is in Inform; `inform-maybe-other' otherwise."
+  "Start Inform mode if file is in Inform; `inform-maybe-other' otherwise."
   (let ((case-fold-search t))
     (if (save-excursion
           (re-search-forward
@@ -728,10 +727,10 @@ That is, one found at the start of a line.")
 ;;; Syntax and indentation
 ;;;
 
-;; Go to the start of the current Inform definition.  Just goes to the
-;; most recent line with a function beginning [, or a directive.
-
 (defun inform-beginning-of-defun ()
+  "Go to the start of the current Inform definition.
+Just goes to the most recent line with a function beginning [, or
+a directive."
   (let ((case-fold-search t))
     (catch 'found
       (end-of-line 1)
@@ -743,21 +742,19 @@ That is, one found at the start of a line.")
             (throw 'found nil))
         (forward-char -1)))))
 
-;; Returns preceding non-blank, non-comment character in buffer.  It is
-;; assumed that point is not inside a string or comment.
-
 (defun inform-preceding-char ()
+  "Return preceding non-blank, non-comment character in buffer.
+It is assumed that point is not inside a string or comment."
   (save-excursion
     (while (/= (point) (progn (forward-comment -1) (point))))
     (skip-syntax-backward " ")
     (if (bobp) ?\;
       (preceding-char))))
 
-;; Returns preceding non-blank, non-comment token in buffer, either the
-;; character itself, or the tokens 'do or 'else.  It is assumed that
-;; point is not inside a string or comment.
-
 (defun inform-preceding-token ()
+  "Return preceding non-blank, non-comment token in buffer.
+Either the character itself, or the tokens 'do or 'else. It is
+assumed that point is not inside a string or comment."
   (save-excursion
     (while (/= (point) (progn (forward-comment -1) (point))))
     (skip-syntax-backward " ")
@@ -821,6 +818,7 @@ That is, one found at the start of a line.")
 ;; considerable.
 
 (defun inform-syntax-class (&optional defun-start data)
+  "Return a list describing the syntax at point."
   (let ((line-start (point))
         in-obj state
         (case-fold-search t))
@@ -879,7 +877,7 @@ That is, one found at the start of a line.")
              ;; this case but in practice works well.
              ((looking-at "\\s-*[A-Z]")
               'directive)
-             (t 
+             (t
               'other)))
 
      ;; Are we in an object?
@@ -909,13 +907,12 @@ That is, one found at the start of a line.")
      ;; State from the parse algorithm.
      state)))
 
-;; Returns the correct indentation for the line at point.  DATA is the
-;; syntax class for the start of the line (as returned by
-;; `inform-syntax-class').  It is assumed that point is somewhere in the
-;; indentation for the current line (i.e., everything to the left is
-;; whitespace).
-
 (defun inform-calculate-indentation (data)
+"Return the correct indentation for the line at point.
+DATA is the syntax class for the start of the line (as returned
+by `inform-syntax-class'). It is assumed that point is somewhere
+in the indentation for the current line (i.e., everything to the
+left is whitespace)."
   (let ((syntax (car data))             ; syntax class of start of line
         (in-obj (nth 1 data))           ; inside an object?
         (depth (car (nth 3 data)))      ; depth of nesting of start of line
@@ -997,15 +994,15 @@ That is, one found at the start of a line.")
                   this-char (following-char))
             (cond
 
-             ;; Each 'else' should have the same indentation as the 
+             ;; Each 'else' should have the same indentation as the
              ;; matching 'if'
              ((looking-at "\\s-*else")
-              ;; Find the matching 'if' by counting 'if's and 'else's 
+              ;; Find the matching 'if' by counting 'if's and 'else's
               ;; in this sexp
               (let ((if-count 0) found)
                 (while (and (not found)
                             (progn (forward-sexp -1) t) ; skip over sub-sexps
-                            (re-search-backward "\\s-*\\(else\\|if\\)" 
+                            (re-search-backward "\\s-*\\(else\\|if\\)"
                                                 paren t))
                   (setq if-count (+ if-count
                                     (if (string= (match-string 1) "else")
@@ -1072,15 +1069,15 @@ That is, one found at the start of a line.")
             ;; We calculated the indentation for the start of the
             ;; string; correct this for the remainder of the string if
             ;; appropriate.
-            (cond 
+            (cond
              ((eq syntax 'string)
               ;; do conditional line-up
-              (cond 
+              (cond
                ((numberp inform-strings-line-up-p)
                 (setq indent inform-strings-line-up-p))
                ((eq inform-strings-line-up-p 'char)
                 (setq indent (1+ string-indent)))
-               (inform-strings-line-up-p 
+               (inform-strings-line-up-p
                 (setq indent string-indent))
                ((not cont-p)
                 (goto-char string-start)
@@ -1099,10 +1096,9 @@ That is, one found at the start of a line.")
 
         indent)))))
 
-
 (defun inform-line-up-comment (current-indent)
   "Return the indentation to line up this comment with the previous one.
-If inform-comments-line-up-p is nil, or the preceeding lines do not contain
+If `inform-comments-line-up-p' is nil, or the preceeding lines do not contain
 comments, return CURRENT-INDENT."
   (if inform-comments-line-up-p
       (save-excursion
@@ -1116,7 +1112,7 @@ comments, return CURRENT-INDENT."
                    ;; a full-line comment, keep searching
                    nil)
                   ((and
-                    (or (end-of-line) t) 
+                    (or (end-of-line) t)
                     (re-search-backward comment-start limit t)
                     (eq (car (inform-syntax-class)) 'comment))
                    ;; a line with a comment char at the end
@@ -1129,15 +1125,14 @@ comments, return CURRENT-INDENT."
           indent))
     current-indent))
 
-
-;; Modifies whitespace to the left of point so that the character after
-;; point is at COLUMN.  If this is impossible, one whitespace character
-;; is left.  Avoids changing buffer gratuitously, and returns non-NIL if
-;; it actually changed the buffer.  If a change is made, point is moved
-;; to the end of any inserted or deleted whitespace.  (If not, it may be
-;; moved at random.)
-
 (defun inform-indent-to (column)
+  "Indent to COLUMN.
+Modifies whitespace to the left of point so that the character
+after point is at COLUMN. If this is impossible, one whitespace
+character is left. Avoids changing buffer gratuitously, and
+returns non-NIL if it actually changed the buffer. If a change is
+made, point is moved to the end of any inserted or deleted
+whitespace. (If not, it may be moved at random.)"
   (let ((col (current-column)))
     (cond ((eq col column) nil)
           ((< col column) (indent-to column) t)
@@ -1150,14 +1145,13 @@ comments, return CURRENT-INDENT."
                  (indent-to (max (if (bolp) mincol (1+ mincol)) column))
                  t))))))
 
-;; Indent the line containing point; DATA is assumed to have been
-;; returned from `inform-syntax-class', called at the *start* of the
-;; current line.  It is assumed that point is at the start of the line.
-;; Fixes up the spacing on `has', `with', `object', `nearby', `private'
-;; and `class' lines.  Returns T if a change was made, NIL otherwise.
-;; Moves point.
-
 (defun inform-do-indent-line (data)
+  "Indent the line containing point.
+DATA is assumed to have been returned from `inform-syntax-class',
+called at the *start* of the current line. It is assumed that
+point is at the start of the line. Fixes up the spacing on `has',
+`with', `object', `nearby', `private' and `class' lines. Returns
+T if a change was made, NIL otherwise. Moves point."
   (skip-syntax-forward " ")
   (let ((changed-p (inform-indent-to (inform-calculate-indentation data)))
         (syntax (car data)))
@@ -1180,29 +1174,26 @@ comments, return CURRENT-INDENT."
       (t nil))
      changed-p)))
 
-;; Calculate and return the indentation for a comment (assume point is
-;; on the comment).
-
 (defun inform-comment-indent ()
+  "Calculate and return the indentation for a comment.
+Assume point is on the comment."
   (skip-syntax-backward " ")
   (if (bolp)
       (inform-calculate-indentation (inform-syntax-class))
     (max (1+ (current-column)) comment-column)))
 
-;; Indent line containing point. 
-;; Keep point at the "logically" same place, unless point was before
-;; new indentation, in which case place point at indentation.
-
 (defun inform-indent-line ()
+  "Indent line containing point.
+Keep point at the 'logically' same place, unless point was before
+new indentation, in which case place point at indentation."
   (let ((oldpos (- (point-max) (point))))
     (forward-line 0)
     (inform-do-indent-line (inform-syntax-class))
     (and (< oldpos (- (point-max) (point)))
          (goto-char (- (point-max) oldpos)))))
 
-;; Indent all the lines in region.
-
 (defun inform-indent-region (start end)
+  "Indent all the lines in region defined by START/END."
   (save-restriction
     (let ((endline (progn (goto-char (max end start))
                           (or (bolp) (end-of-line))
@@ -1223,11 +1214,10 @@ comments, return CURRENT-INDENT."
 ;;; Filling paragraphs
 ;;;
 
-;; Fill quoted string or comment containing point.  To fill a quoted
-;; string, point must be between the quotes.  Deals appropriately with
-;; trailing backslashes.
-
 (defun inform-fill-paragraph (&optional arg)
+  "Fill quoted string or comment containing point.
+To fill a quoted string, point must be between the quotes. Deals
+appropriately with trailing backslashes. ARG is ignored."
   (let* ((data (inform-syntax-class))
          (syntax (car data))
          (case-fold-search t))
@@ -1238,7 +1228,7 @@ comments, return CURRENT-INDENT."
                (let ((fill-prefix (match-string 0)))
                  (fill-paragraph nil)
                  t)
-             (error "Can't fill comments not at start of line.")))
+             (error "Can't fill comments not at start of line")))
           ((eq syntax 'string)
            (save-excursion
              (let* ((indent-col (prog2
@@ -1282,24 +1272,22 @@ comments, return CURRENT-INDENT."
              ;; Return T so that `fill-paragaph' doesn't try anything.
              t))
 
-          (t (error "Point is neither in a comment nor a string.")))))
+          (t (error "Point is neither in a comment nor a string")))))
 
 
 ;;;
 ;;; Tags
 ;;;
 
-;; Return the project file to which the current file belongs.  This is
-;; either the value of `inform-project-file', the current file.
-
 (defun inform-project-file ()
+  "Return the project file to which the current file belongs.
+This is either the value of variable `inform-project-file' or the
+current file."
   (or inform-project-file (buffer-file-name)))
 
-;; Builds a list of files in the current project and returns it.  It
-;; recursively searches through included files, but tries to avoid
-;; loops.
-
 (defun inform-project-file-list ()
+  "Builds a list of files in the current project and return it.
+It recursively searches through included files, but tries to avoid loops."
   (let* ((project-file (expand-file-name (inform-project-file)))
          (project-dir (file-name-directory project-file))
          (in-file-list (list project-file))
@@ -1328,10 +1316,9 @@ comments, return CURRENT-INDENT."
     (message "Building list of files in project...done")
     out-file-list))
 
-;; Visit tags table for current project, if it exists, or do nothing if
-;; there is no current project, or no tags table.
-
 (defun inform-auto-load-tags-table ()
+  "Visit tags table for current project, if it exists.
+Do nothing if there is no current project, or no tags table."
   (let (tf (project (inform-project-file)))
     (if project
         (progn
@@ -1368,7 +1355,6 @@ table."
     (inform-auto-load-tags-table)))
 
 
-
 
 ;;;
 ;;; Electric keys
@@ -1386,7 +1372,7 @@ turns it off when negative, and just toggles it when zero."
           (> arg 0))))
 
 (defun inform-electric-key (arg)
-  "Insert the key typed and correct indentation."
+  "Insert the key typed (ARG) and correct indentation."
   (interactive "P")
   (if (and (not arg) (eolp))
       (progn
@@ -1396,7 +1382,7 @@ turns it off when negative, and just toggles it when zero."
     (self-insert-command (prefix-numeric-value arg))))
 
 (defun inform-electric-semi (arg)
-  "Insert the key typed and correct line's indentation, as for semicolon.
+  "Insert the key typed (ARG) and correct line's indentation, as for semicolon.
 Special handling does not occur inside strings and comments.
 Inserts newline after the character if `inform-auto-newline' is non-NIL."
   (interactive "P")
@@ -1412,7 +1398,7 @@ Inserts newline after the character if `inform-auto-newline' is non-NIL."
     (self-insert-command (prefix-numeric-value arg))))
 
 (defun inform-electric-comma (arg)
-  "Insert the key typed and correct line's indentation, as for comma.
+  "Insert the key typed (ARG) and correct line's indentation, as for comma.
 Special handling only occurs in object declarations.
 Inserts newline after the character if `inform-auto-newline' is non-NIL."
   (interactive "P")
@@ -1430,7 +1416,7 @@ Inserts newline after the character if `inform-auto-newline' is non-NIL."
     (self-insert-command (prefix-numeric-value arg))))
 
 (defun inform-electric-brace (arg)
-  "Insert the key typed and correct line's indentation.
+  "Insert the key typed (ARG) and correct line's indentation.
 Insert newlines before and after if `inform-auto-newline' is non-NIL."
   ;; This logic is the same as electric-c-brace.
   (interactive "P")
@@ -1467,8 +1453,8 @@ Insert newlines before and after if `inform-auto-newline' is non-NIL."
 
 (defun inform-next-object (&optional arg)
   "Go to the next object or class declaration in the file.
-With a prefix arg, go forward that many declarations.
-With a negative prefix arg, search backwards."
+With a prefix ARG, go forward that many declarations.
+With a negative prefix ARG, search backwards."
   (interactive "P")
   (let ((fun 're-search-forward)
         (n (prefix-numeric-value arg)))
@@ -1486,12 +1472,13 @@ With a negative prefix arg, search backwards."
 
 (defun inform-prev-object (&optional arg)
   "Go to the previous object or class declaration in the file.
-With a prefix arg, go back many declarations.
-With a negative prefix arg, go forwards."
+With a prefix ARG, go back many declarations.
+With a negative prefix ARG, go forwards."
   (interactive "P")
   (inform-next-object (- (prefix-numeric-value arg))))
 
 (defun inform-imenu-extract-name ()
+  "Extract item name for imenu."
   (if (looking-at
        "^#?\\(object\\|nearby\\|class\\)\\s-+\\(->\\s-+\\)*\\(\\(\\w\\|\\s_\\)+\\)")
       (concat (if (string= "class" (downcase (match-string 1)))
@@ -1506,7 +1493,7 @@ With a negative prefix arg, go forwards."
 
 ;; Tell Emacs how to parse inform compiler output so next-error can be
 ;; used to jump to any errors. This is done at load time so the regexp
-;; is set up before compilation starts. 
+;; is set up before compilation starts.
 ;; XEmacs compile mode's builtin regexps work OK.
 
 (if (featurep 'emacs)
@@ -1519,10 +1506,9 @@ With a negative prefix arg, go forwards."
          inform-compilation-error-regexp-alist)))
 
 
-
 (defun inform-build-project ()
   "Compile the current Inform project.
-The current project is given by `inform-project-file', or the current
+The current project is given by variable`inform-project-file', or the current
 file if this is NIL."
   (interactive)
   (let ((project-file (file-name-nondirectory (inform-project-file))))
@@ -1542,11 +1528,11 @@ file if this is NIL."
 
 (defun inform-run-project ()
   "Run the current Inform project using `inform-interpreter-command'.
-The current project is given by `inform-project-file', or the current
-file if this is NIL.  Will kill any running interpreter if
-`inform-interpreter-kill-old-process' is non-NIL.  Switches to the
-interpreter's output buffer if `inform-interpreter-is-graphical' is
-NIL."
+The current project is given by variable`inform-project-file', or
+the current file if this is NIL. Will kill any running
+interpreter if `inform-interpreter-kill-old-process' is non-NIL.
+Switches to the interpreter's output buffer if
+`inform-interpreter-is-graphical' is NIL."
   (interactive)
   (let* ((project-file (inform-project-file))
          (story-file-base (if (string-match "\\`[^.]+\\(\\.inf\\'\\)"
