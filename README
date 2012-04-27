@@ -11,6 +11,8 @@ can also run a z-code interpreter against the compiled code.
 It should work on GNU Emacs (v22+) or XEmacs (v21.4+) on any supported
 platform.
 
+See the NEWS file for details of recent changes.
+
 
 Installing inform-mode
 ----------------------
