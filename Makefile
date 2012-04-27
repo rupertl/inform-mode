@@ -10,11 +10,14 @@ PREFIX=/usr/local/share/emacs/site-lisp
 VERSION=1.6.0
 ELS=inform-mode.el
 ELCS=$(ELS:.el=.elc)
-DIST_FILES=$(ELS) AUTHORS COPYING COPYING-GPL-3 INSTALL Makefile README
+OTHER_FILES=AUTHORS COPYING COPYING-GPL-3 INSTALL Makefile README
+DIST_FILES=$(ELS) $(OTHER_FILES)
 
 EMACSFLAGS=
 BATCH=$(EMACS) $(EMACSFLAGS) -batch -q -no-site-file -eval \
   "(setq load-path (cons (expand-file-name \".\") load-path))"
+
+ZIP=zip
 
 %.elc: %.el
 	$(BATCH) --eval '(byte-compile-file "$<")'
@@ -28,7 +31,7 @@ install: all
 uninstall: 
 	rm -f $(PREFIX)/${ELCS} $(PREFIX)/${ELS}
 
-dist: inform-mode-$(VERSION).tar.gz
+dist: inform-mode-$(VERSION).tar.gz inform-mode-$(VERSION).zip
 
 inform-mode-$(VERSION).tar.gz: $(DIST_FILES)
 	mkdir -p inform-mode-$(VERSION)
@@ -36,7 +39,14 @@ inform-mode-$(VERSION).tar.gz: $(DIST_FILES)
 	tar cvzf inform-mode-$(VERSION).tar.gz inform-mode-$(VERSION)
 	rm -rf inform-mode-$(VERSION)
 
+inform-mode-$(VERSION).zip: $(DIST_FILES)
+	mkdir -p inform-mode-$(VERSION)
+	cp --preserve=timestamps $(DIST_FILES) inform-mode-$(VERSION)
+	(cd inform-mode-$(VERSION); for x in $(OTHER_FILES); do mv $$x $$x.txt; done; rm -f Makefile.txt)
+	$(ZIP) -l inform-mode-$(VERSION).zip inform-mode-$(VERSION)/*
+	rm -rf inform-mode-$(VERSION)
+
 clean:
-	rm -rf *~ $(ELCS) *.tar.gz inform-mode-$(VERSION)
+	rm -rf *~ $(ELCS) *.tar.gz *.zip inform-mode-$(VERSION)
 
 
