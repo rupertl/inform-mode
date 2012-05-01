@@ -3,8 +3,8 @@
 ;; Original-Author: Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
 ;; Maintainer: Rupert Lane <rupert@rupert-lane.org>
 ;; Created: 1 Dec 1994
-;; Version: 1.6.0 (testing)
-;; Released: X May 2012
+;; Version: 1.6.0
+;; Released: 1 May 2012
 ;; Keywords: languages
 
 ;;; Copyright:
@@ -94,7 +94,7 @@
 ;;; General variables
 ;;;
 
-(defconst inform-mode-version "1.6.0 (testing)")
+(defconst inform-mode-version "1.6.0")
 
 (defcustom inform-maybe-other 'c-mode
   "*`inform-maybe-mode' runs this if current file is not in Inform mode."
