@@ -81,7 +81,7 @@
   :group 'languages)
 
 (defgroup inform-mode-indent nil
-  "Customize indentation and highlighting of Inform source coee."
+  "Customize indentation and highlighting of Inform source code."
   :group 'inform-mode)
 
 (defgroup inform-mode-build-run nil
@@ -224,7 +224,7 @@ If a number, will always set the indentation to that column.
 If 'char', will line up with the first character of the string.
 If 'quote', or other non-nil value, will line up with open quote on
 first line."
-  :type '(radio (const :tag "Indent accoridng to context" nil)
+  :type '(radio (const :tag "Indent according to context" nil)
                 (integer :tag "Column to indent to")
                 (const :tag "Line up with first character of string" char)
                 (const :tag "Line up with open quote on first line" quote))
@@ -338,7 +338,7 @@ running the interpreter."
 ;;; Keyword definitions-------------------------------------------------------
 
 ;; These are used for syntax and font-lock purposes.
-;; They combine words used in Inform 5 and Inform 6 for full compatability.
+;; They combine words used in Inform 5 and Inform 6 for full compatibility.
 ;; You can add new keywords directly to this list as the regexps for
 ;; font-locking are defined when this file is byte-compiled or eval'd.
 
@@ -551,7 +551,7 @@ That is, one found at the start of a line.")
 * Running:
 
   Type \\[inform-run-project] to run the current project in an
-  interpreter, either as a sepaarte process or in an Emacs terminal buffer.
+  interpreter, either as a separate process or in an Emacs terminal buffer.
 
 * Font-lock support:
 
@@ -798,7 +798,7 @@ assumed that point is not inside a string or comment."
 
 ;; SEXPS is a list of pairs (D . P) where P is the start of a sexp
 ;; containing point and D is its nesting depth.  The pairs are in
-;; descreasing order of nesting depth.
+;; decreasing order of nesting depth.
 
 ;; STATE is the list returned by `parse-partial-sexp'.
 
@@ -873,7 +873,7 @@ assumed that point is not inside a string or comment."
              ;; This handles declarations of objects in a class eg
              ;; Bird "swallow";
              ;; It assumes that class names follow the convention of being
-             ;; capitalised. This is not the most elegent way of handling
+             ;; capitalised. This is not the most elegant way of handling
              ;; this case but in practice works well.
              ((looking-at "\\s-*[A-Z]")
               'directive)
@@ -1098,7 +1098,7 @@ left is whitespace)."
 
 (defun inform-line-up-comment (current-indent)
   "Return the indentation to line up this comment with the previous one.
-If `inform-comments-line-up-p' is nil, or the preceeding lines do not contain
+If `inform-comments-line-up-p' is nil, or the preceding lines do not contain
 comments, return CURRENT-INDENT."
   (if inform-comments-line-up-p
       (save-excursion

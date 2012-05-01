@@ -1,23 +1,21 @@
 Notes on installing inform-mode.
 
-There are three options to install inform-mode: via the package system
-on your Linux system; via the Makefile if you are on a Unix-derived
-system, have access to the 'make' program and have root access; or
-manually, which should work on all platforms. Each is described further
-below.
+There are three options to install inform-mode: via the package system;
+via the Makefile if you are on a Unix-derived system, have access to the
+'make' program and have root access; or manually, which should work on
+all platforms. Each is described further below.
 
 1. Packaged versions
 --------------------
 
-The simplest way to install inform-mode if you are running Linux is via
-the package system. 
-
-On Debian, Ubuntu or other derivatives you can run
+Some GNU/Linux systems have inform-mode available via their packaging
+systems. On Debian, Ubuntu or other derivatives you can run
 
     apt-get install inform-mode
 
-However, this may not provide the latest version: if you want this try
-one of the following two methods.
+However, this may not provide the latest version: if you want this,
+download the latest version from http://www.rupert-lane.org/inform-mode/
+and try one of the following two methods.
 
 
 2. Makefile
