@@ -1,11 +1,25 @@
 Notes on installing inform-mode.
 
-There are three options to install inform-mode: via the package system;
-via the Makefile if you are on a Unix-derived system, have access to the
-'make' program and have root access; or manually, which should work on
-all platforms. Each is described further below.
+There are four options to install inform-mode: via the Marmalade Emacs
+packaging system; using the package system on your OS; via the Makefile
+if you are on a Unix-derived system, have access to the 'make' program
+and have root access; or manually, which should work on all platforms.
+Each is described further below.
 
-1. Packaged versions
+1. Via Marmalade
+----------------
+
+Marmalade (http://marmalade-repo.org/) is a packaging system for Emacs.
+Follow the instructions on the website to add Marmalade to your list of
+package sources. Then inside emacs run
+
+    M-x package-install RET inform-mode RET
+
+Finally, update your .emacs as per the instructions at the end of this
+page.
+
+
+2. Packaged versions
 --------------------
 
 Some GNU/Linux systems have inform-mode available via their packaging
@@ -18,7 +32,7 @@ download the latest version from http://www.rupert-lane.org/inform-mode/
 and try one of the following two methods.
 
 
-2. Makefile
+3. Makefile
 -----------
 
 Edit the file 'Makefile' and replace the name of your emacs binary and
@@ -35,17 +49,11 @@ to byte-compile the source. Then as root, eg using sudo:
 to install the files to the site-lisp directory for your emacs so it is
 available for all users on your system.
 
-Finally, add the following to your .emacs:
-
-(autoload 'inform-mode "inform-mode" "Inform editing mode." t)
-(autoload 'inform-maybe-mode "inform-mode" "Inform/C header editing mode.")
-(setq auto-mode-alist
-      (append '(("\\.h\\'"   . inform-maybe-mode)
-                ("\\.inf\\'" . inform-mode))
-               auto-mode-alist))
+Finally, update your .emacs as per the instructions at the end of this
+page.
 
 
-3. Manually
+4. Manually
 -----------
 
 First, byte-compile the file by running the following command (all on
@@ -64,7 +72,16 @@ putting a line like:
 
 in your .emacs.
 
-Finally, add the following to your .emacs:
+Finally, update your .emacs as per the instructions at the end of this
+page.
+
+
+Updating .emacs
+---------------
+
+For all options except 2) you will need to update your .emacs to
+autoload inform-mode and make it recognise .inf and .h files. Add the
+following:
 
 (autoload 'inform-mode "inform-mode" "Inform editing mode." t)
 (autoload 'inform-maybe-mode "inform-mode" "Inform/C header editing mode.")

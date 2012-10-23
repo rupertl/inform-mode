@@ -28,8 +28,8 @@
 ;;; Commentary:
 
 ;; Inform is a compiler for adventure games by Graham Nelson,
-;; available by anonymous FTP from
-;; /ftp.ifarchive.org:/if-archive/programming/inform/
+;; available at
+;; http://www.inform-fiction.org/inform6.html
 ;;
 ;; This file implements a major mode for editing Inform 6 programs. It
 ;; understands most Inform syntax and is capable of indenting lines

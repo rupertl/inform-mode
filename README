@@ -49,6 +49,9 @@ Seee http://www.rupert-lane.org/inform-mode/news.html or subscribe to
 the Atom feed at http://www.rupert-lane.org/inform-mode/news.xml to get
 details of the latest version.
 
+inform-mode can be donwloaded via the Marmalade package system in Emacs;
+see http://marmalade-repo.org/
+
 It is also available via anonymous FTP at ftp.ifarchive.org
 
 
