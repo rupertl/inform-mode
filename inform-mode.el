@@ -1,15 +1,17 @@
-;;; inform-mode.el --- Inform mode for Emacs
+;;; inform-mode.el --- Major mode for Inform 6 interactive fiction code
 
-;; Original-Author: Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
-;; Maintainer: Rupert Lane <rupert@rupert-lane.org>
+;; Author: Rupert Lane <rupert@rupert-lane.org>
+;;         Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
+;;         Michael Fessler
 ;; Created: 1 Dec 1994
-;; Version: 1.6.0
-;; Released: 1 May 2012
+;; Version: 1.6.1
+;; Released: 23 Oct 2012
+;; Url: http://www.rupert-lane.org/inform-mode/
 ;; Keywords: languages
 
 ;;; Copyright:
 
-;; Copyright (c) by Gareth Rees 1996
+;; Original version copyright (c) by Gareth Rees 1996
 ;; Portions copyright (c) by Michael Fessler 1997-1998
 ;; Portions copyright (c) by Rupert Lane 1999-2012
 
@@ -29,9 +31,9 @@
 ;; available by anonymous FTP from
 ;; /ftp.ifarchive.org:/if-archive/programming/inform/
 ;;
-;; This file implements a major mode for editing Inform programs.  It
+;; This file implements a major mode for editing Inform 6 programs. It
 ;; understands most Inform syntax and is capable of indenting lines
-;; and formatting quoted strings.  Type `C-h m' within Inform mode for
+;; and formatting quoted strings. Type `C-h m' within Inform mode for
 ;; more details.
 ;;
 ;; Because Inform header files use the extension ".h" just as C header
@@ -61,6 +63,7 @@
 ;;; History:
 
 ;; See the NEWS file in the distribution
+;; or http://www.rupert-lane.org/inform-mode/news.html
 
 ;;; Code:
 
@@ -94,7 +97,7 @@
 ;;; General variables
 ;;;
 
-(defconst inform-mode-version "1.6.0")
+(defconst inform-mode-version "1.6.1")
 
 (defcustom inform-maybe-other 'c-mode
   "*`inform-maybe-mode' runs this if current file is not in Inform mode."
