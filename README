@@ -1,4 +1,4 @@
-inform-mode: an Emacs major mode for editing Inform source code.
+inform-mode: an Emacs major mode for editing Inform 6 source code.
 
 Introduction
 ------------
@@ -64,6 +64,10 @@ be welcomed. Please email rupert@rupert-lane.org
 Development versions can be obtained via the git repository
 
 git clone http://www.rupert-lane.org/inform-mode/inform-mode.git
+
+Or via github:
+
+https://github.com/rupertl/inform-mode
 
 The 'master' branch tracks the released version; 'testing' contains the
 latest development version but may not be stable.
