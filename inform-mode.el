@@ -42,19 +42,6 @@
 ;; Inform, it selects inform-mode; otherwise it selects the mode given
 ;; by the variable `inform-maybe-other'.
 
-;; Put this file somewhere on your load-path, and the following code in
-;; your .emacs file:
-;;
-;;  (autoload 'inform-mode "inform-mode" "Inform editing mode." t)
-;;  (autoload 'inform-maybe-mode "inform-mode" "Inform/C header editing mode.")
-;;  (setq auto-mode-alist
-;;        (append '(("\\.h\\'"   . inform-maybe-mode)
-;;                  ("\\.inf\\'" . inform-mode))
-;;                auto-mode-alist))
-;;
-;; To turn on font locking add:
-;; (add-hook 'inform-mode-hook 'turn-on-font-lock)
-
 ;; Latest version of this mode can be found at
 ;; http://www.rupert-lane.org/inform-mode/
 
@@ -513,6 +500,7 @@ That is, one found at the start of a line.")
 ;;; Inform mode
 ;;;
 
+;;;###autoload
 (defun inform-mode ()
   "Major mode for editing Inform programs.
 
@@ -555,10 +543,6 @@ That is, one found at the start of a line.")
 
   Type \\[inform-run-project] to run the current project in an
   interpreter, either as a separate process or in an Emacs terminal buffer.
-
-* Font-lock support:
-
-  Put \(add-hook 'inform-mode-hook 'turn-on-font-lock) in your .emacs.
 
 * Spell checking:
 
@@ -715,6 +699,7 @@ That is, one found at the start of a line.")
       (inform-auto-load-tags-table))
   (run-hooks 'inform-mode-hook))
 
+;;;###autoload
 (defun inform-maybe-mode ()
   "Start Inform mode if file is in Inform; `inform-maybe-other' otherwise."
   (let ((case-fold-search t))
@@ -1624,6 +1609,16 @@ Switches to the interpreter's output buffer if
                     (and ispell-process
                          (eq (process-status ispell-process) 'run)))))))))
 
+
+
+;;;###autoload
+(setq auto-mode-alist
+      (append '(("\\.h\\'"   . inform-maybe-mode)
+                ("\\.inf\\'" . inform-mode))
+              auto-mode-alist))
+
+;;;###autoload
+(add-hook 'inform-mode-hook 'turn-on-font-lock)
 
 
 (provide 'inform-mode)
