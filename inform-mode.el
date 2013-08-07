@@ -4,8 +4,8 @@
 ;;         Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
 ;;         Michael Fessler
 ;; Created: 1 Dec 1994
-;; Version: 1.6.1
-;; Released: 23 Oct 2012
+;; Version: 1.6.2 beta 002
+;; Released: XX-XXX-2013
 ;; Url: http://www.rupert-lane.org/inform-mode/
 ;; Keywords: languages
 
@@ -84,7 +84,7 @@
 ;;; General variables
 ;;;
 
-(defconst inform-mode-version "1.6.1")
+(defconst inform-mode-version "1.6.2-002")
 
 (defcustom inform-maybe-other 'c-mode
   "*`inform-maybe-mode' runs this if current file is not in Inform mode."
@@ -220,6 +220,12 @@ first line."
                 (const :tag "Line up with open quote on first line" quote))
   :group 'inform-mode-indent)
 (put 'inform-strings-line-up-p 'safe-local-variable 'sexp)
+
+(defcustom inform-indent-semicolon t
+  "*If nil, a semicolon on a line of its own will not be indented."
+  :type 'boolean
+  :group 'inform-mode-indent)
+(put 'inform-indent-semicolon 'safe-local-variable 'booleanp)
 
 
 
@@ -912,6 +918,11 @@ left is whitespace)."
      ;; constant 0.
      ((eq syntax 'directive) 0)
      ((eq syntax 'blank) 0)
+
+     ;; Semicolons on a line of their own will be indented per the
+     ;; current syntax unless user variable inform-indent-semicolon is
+     ;; nil.
+     ((and (looking-at "\\s-*;$") (not inform-indent-semicolon)) 0)
 
      ;; Various standard indentations.
      ((eq syntax 'property) inform-indent-property)
