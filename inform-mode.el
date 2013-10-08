@@ -263,7 +263,7 @@ first line."
 ;;;
 
 (defcustom inform-project-file nil
-  "*The top-level Inform project file to which the current file belongs."
+  "*The top level Inform project file to which the current file belongs."
   :type '(radio (file :tag "Project file name")
                 (const :tag "Disabled" nil))
   :group 'inform-mode-build-run)
@@ -766,10 +766,6 @@ assumed that point is not inside a string or comment."
 
 ;; `inform-syntax-class' returns a list describing the syntax at point.
 
-;; Optional argument DEFUN-START gives the point from which parsing
-;; should start, and DATA is the list returned by a previous invocation
-;; of `inform-syntax-class'.
-
 ;; The returned list is of the form (SYNTAX IN-OBJ SEXPS STATE).
 ;; SYNTAX is one of
 
@@ -812,7 +808,10 @@ assumed that point is not inside a string or comment."
 ;; considerable.
 
 (defun inform-syntax-class (&optional defun-start data)
-  "Return a list describing the syntax at point."
+  "Return a list describing the syntax at point.
+Optional argument DEFUN-START gives the point from which parsing
+should start, and DATA is the list returned by a previous invocation
+of `inform-syntax-class'. See code for details on the return type."
   (let ((line-start (point))
         in-obj state
         (case-fold-search t))
@@ -1597,7 +1596,7 @@ Switches to the interpreter's output buffer if
 ;;;
 
 (defun inform-spell-check-buffer ()
-  "Spellcheck all strings in the buffer using ispell."
+  "Spellcheck all strings in the buffer using Ispell."
   (interactive)
   (let (start (spell-continue t))
     (save-excursion
