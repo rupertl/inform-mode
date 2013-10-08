@@ -4,7 +4,7 @@
 ;;         Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
 ;;         Michael Fessler
 ;; Created: 1 Dec 1994
-;; Version: 1.6.2 beta 002
+;; Version: 1.6.2 beta 003
 ;; Released: XX-XXX-2013
 ;; Url: http://www.rupert-lane.org/inform-mode/
 ;; Keywords: languages
@@ -13,7 +13,7 @@
 
 ;; Original version copyright (c) by Gareth Rees 1996
 ;; Portions copyright (c) by Michael Fessler 1997-1998
-;; Portions copyright (c) by Rupert Lane 1999-2012
+;; Portions copyright (c) by Rupert Lane 1999-2013
 
 ;; inform-mode is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -84,7 +84,7 @@
 ;;; General variables
 ;;;
 
-(defconst inform-mode-version "1.6.2-002")
+(defconst inform-mode-version "1.6.2-003")
 
 (defcustom inform-maybe-other 'c-mode
   "*`inform-maybe-mode' runs this if current file is not in Inform mode."

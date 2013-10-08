@@ -7,7 +7,7 @@ PREFIX=/usr/local/share/emacs/site-lisp
 
 # There is normally no need to edit anything below this line.
 
-VERSION=1.6.1
+VERSION=1.6.2
 ELS=inform-mode.el
 ELCS=$(ELS:.el=.elc)
 OTHER_FILES=AUTHORS COPYING COPYING-GPL-3 INSTALL Makefile NEWS README

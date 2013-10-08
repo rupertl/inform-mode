@@ -15,9 +15,6 @@ package sources. Then inside emacs run
 
     M-x package-install RET inform-mode RET
 
-Finally, update your .emacs as per the instructions at the end of this
-page.
-
 
 2. Packaged versions
 --------------------
@@ -49,9 +46,6 @@ to byte-compile the source. Then as root, eg using sudo:
 to install the files to the site-lisp directory for your emacs so it is
 available for all users on your system.
 
-Finally, update your .emacs as per the instructions at the end of this
-page.
-
 
 4. Manually
 -----------
@@ -72,14 +66,11 @@ putting a line like:
 
 in your .emacs.
 
-Finally, update your .emacs as per the instructions at the end of this
-page.
-
 
 Updating .emacs
 ---------------
 
-For all options except 2) you will need to update your .emacs to
+For all options except 1) and 2) you will need to update your .emacs to
 autoload inform-mode and make it recognise .inf and .h files. Add the
 following:
 
