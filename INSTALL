@@ -4,7 +4,7 @@ There are four options to install inform-mode: via the Marmalade Emacs
 packaging system; using the package system on your OS; via the Makefile
 if you are on a Unix-derived system, have access to the 'make' program
 and have root access; or manually, which should work on all platforms.
-Each is described further below.
+Each is described further below. XEmacs users should also see note 6.
 
 1. Via Marmalade
 ----------------
@@ -55,9 +55,6 @@ one line):
 
     emacs  -batch -q -no-site-file -eval "(setq load-path (cons (expand-file-name \".\") load-path))" --eval '(byte-compile-file "inform-mode.el")'
 
-Replace Emacs with 'xemacs' if you are using XEmacs. Ignore any
-byte-compile warnings.
-
 Next, copy inform-mode.elc to the directory you want to install it. If
 you put the file in a non-standard place, tell emacs where to find it by
 putting a line like:
@@ -67,8 +64,8 @@ putting a line like:
 in your .emacs.
 
 
-Updating .emacs
----------------
+5. Updating .emacs
+------------------
 
 For all options except 1) and 2) you will need to update your .emacs to
 autoload inform-mode and make it recognise .inf and .h files. Add the
@@ -80,6 +77,14 @@ following:
       (append '(("\\.h\\'"   . inform-maybe-mode)
                 ("\\.inf\\'" . inform-mode))
                auto-mode-alist))
+
+
+6. A note for XEmacs users
+--------------------------
+
+You may need to install extra packages for inform-mode to work. If you
+are using the default XEmacs install on Windows, for example, you will
+need to install the 'ispell' and 'eterm' packages.
 
 
 # Local Variables:
