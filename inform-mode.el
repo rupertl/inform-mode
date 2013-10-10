@@ -4,8 +4,8 @@
 ;;         Gareth Rees <Gareth.Rees@cl.cam.ac.uk>
 ;;         Michael Fessler
 ;; Created: 1 Dec 1994
-;; Version: 1.6.2 beta 003
-;; Released: XX-XXX-2013
+;; Version: 1.6.2
+;; Released: 10-Oct-2013
 ;; Url: http://www.rupert-lane.org/inform-mode/
 ;; Keywords: languages
 
@@ -84,7 +84,7 @@
 ;;; General variables
 ;;;
 
-(defconst inform-mode-version "1.6.2-003")
+(defconst inform-mode-version "1.6.2")
 
 (defcustom inform-maybe-other 'c-mode
   "*`inform-maybe-mode' runs this if current file is not in Inform mode."

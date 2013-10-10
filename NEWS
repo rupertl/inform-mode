@@ -1,3 +1,31 @@
+inform-mode 1.6.2 (2013-10-10)
+==============================
+
+Features
+--------
+
+    * Added option inform-indent-semicolon
+
+    This will govern indentation of semicolons on lines of their own as
+    per a request from Dave Robinson. The default behaviour, as in
+    previous versions, is to indent the semicolon to match the current
+    syntax. If inform-indent-semicolon is set to nil then the semicolon
+    will not be indented.
+
+Other changes
+-------------
+
+    * Add autoload hints for mode (thanks to Reuben Thomas for the patch)
+
+    * Source code available on github
+
+    * Docstrings cleanup
+
+    * Added a note for XEmacs users regarding extra packages
+
+    * Tested on Emacs 24.3
+
+
 inform-mode 1.6.1 (2012-10-23)
 ==============================
 
