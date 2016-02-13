@@ -159,7 +159,7 @@ If you do not want a leading newline before opening braces then use:
 ;;; Indentation parameters
 ;;;
 
-(defcustom inform-indent-property 8
+(defcustom inform-indent-property 9
   "*Indentation of the start of a property declaration."
   :type 'integer
   :group 'inform-mode-indent)
@@ -591,7 +591,7 @@ That is, one found at the start of a line.")
 
   Values in parentheses are the default indentation style.
 
-  inform-indent-property \(8\)
+  inform-indent-property \(9\)
     Indentation of a property or attribute in an object declaration.
 
   inform-indent-has-with-class \(1\)
