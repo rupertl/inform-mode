@@ -1213,9 +1213,11 @@ new indentation, in which case place point at indentation."
 ;;;
 
 (defun inform-fill-paragraph (&optional arg)
-  "Fill quoted string or comment containing point.
-To fill a quoted string, point must be between the quotes. Deals
-appropriately with trailing backslashes. ARG is ignored."
+  "Fill quoted string paragraph or comment containing point.
+To fill a quoted string, point must be between the quotes. Will
+fill only the current paragraph, denoted by a blank line before
+or after point, or the whole string if no blank lines found.
+Deals appropriately with trailing backslashes. ARG is ignored."
   (let* ((data (inform-syntax-class))
          (syntax (car data))
          (case-fold-search t))
@@ -1233,39 +1235,53 @@ appropriately with trailing backslashes. ARG is ignored."
                                     (insert ?\n)
                                     (inform-calculate-indentation data)
                                   (delete-char -1)))
-                    (start (search-backward "\""))
-                    (end (search-forward "\"" nil nil 2))
+                    ;; Start from either after opening double quote or
+                    ;; blank line, skipping over any whitespace after
+                    ;; blank line.
+                    (start (progn
+                             (re-search-backward "^[ \t]*$\\|\"")
+                             (if (looking-at-p "\"")
+                                 (forward-char)
+                               (skip-chars-forward " \n\t"))
+                             (point)))
+                    ;; End just before closing duote or next blank
+                    ;; line
+                    (end (progn
+                           (re-search-forward "^[ \t]*$\\|\"")
+                           (1- (match-beginning 0))))
                     (fill-column (- fill-column 2))
                     linebeg)
-               (save-restriction
-                 (narrow-to-region (point-min) end)
+               (and (> end (1+ start))  ; skip blank/empty strings
+                    (save-restriction
+                      (narrow-to-region (point-min) end)
 
-                 ;; Fold all the lines together, removing backslashes
-                 ;; and multiple spaces as we go.
-                 (subst-char-in-region start end ?\n ? )
-                 (subst-char-in-region start end ?\\ ? )
-                 (subst-char-in-region start end ?\t ? )
-                 (goto-char start)
-                 (while (re-search-forward "  +" end t)
-                   (delete-region (match-beginning 0) (1- (match-end 0))))
+                      ;; Fold all the lines together, removing backslashes
+                      ;; and multiple spaces as we go.
+                      (subst-char-in-region start end ?\n ? )
+                      (subst-char-in-region start end ?\\ ? )
+                      (subst-char-in-region start end ?\t ? )
+                      (goto-char start)
+                      (while (re-search-forward "  +" end t)
+                        (delete-region (match-beginning 0) (1- (match-end 0))))
 
-                 ;; Split this line; reindent after first split,
-                 ;; otherwise indent to point where first split ended
-                 ;; up.
-                 (goto-char start)
-                 (setq linebeg start)
-                 (while (not (eobp))
-                   (move-to-column (1+ fill-column))
-                   (if (eobp)
-                       nil
-                     (skip-chars-backward "^ " linebeg)
-                     (if (eq (point) linebeg)
-                         (progn
-                           (skip-chars-forward "^ ")
-                           (skip-chars-forward " ")))
-                     (insert "\n")
-                     (indent-to-column indent-col 1)
-                     (setq linebeg (point))))))
+                      ;; Split this line; reindent after first split,
+                      ;; otherwise indent to point where first split ended
+                      ;; up.
+                      (goto-char start)
+                      (indent-to-column indent-col)
+                      (setq linebeg start)
+                      (while (not (eobp))
+                        (move-to-column (1+ fill-column))
+                        (if (eobp)
+                            nil
+                          (skip-chars-backward "^ " linebeg)
+                          (if (eq (point) linebeg)
+                              (progn
+                                (skip-chars-forward "^ ")
+                                (skip-chars-forward " ")))
+                          (insert "\n")
+                          (indent-to-column indent-col 1)
+                          (setq linebeg (point)))))))
 
              ;; Return T so that `fill-paragaph' doesn't try anything.
              t))
