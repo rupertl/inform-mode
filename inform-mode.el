@@ -1244,7 +1244,7 @@ Deals appropriately with trailing backslashes. ARG is ignored."
                                  (forward-char)
                                (skip-chars-forward " \n\t"))
                              (point)))
-                    ;; End just before closing duote or next blank
+                    ;; End just before closing quote or next blank
                     ;; line
                     (end (progn
                            (re-search-forward "^[ \t]*$\\|\"")
@@ -1268,7 +1268,7 @@ Deals appropriately with trailing backslashes. ARG is ignored."
                       ;; otherwise indent to point where first split ended
                       ;; up.
                       (goto-char start)
-                      (indent-to-column indent-col)
+                      (inform-indent-line)
                       (setq linebeg start)
                       (while (not (eobp))
                         (move-to-column (1+ fill-column))
